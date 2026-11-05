@@ -1,0 +1,20 @@
+# Front controller. Works from the web root or from a sub folder.
+DirectoryIndex index.php
+Options -Indexes
+
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+
+  # Some CGI/FPM hosts drop the Authorization header unless told otherwise.
+  RewriteCond %{HTTP:Authorization} .
+  RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
+
+  # Internals are never reachable over HTTP.
+  RewriteRule ^(src|config|storage|migrations|bin)(/|$) - [F,L]
+
+  # Real files (the built Angular bundle) are served directly.
+  RewriteCond %{REQUEST_FILENAME} -f
+  RewriteRule ^ - [L]
+
+  RewriteRule ^ index.php [L]
+</IfModule>

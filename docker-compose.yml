@@ -1,0 +1,83 @@
+# Development stack. Angular runs on your machine (`npm start` in frontend/).
+#   API + LTI      http://localhost:8090
+#   phpMyAdmin     http://localhost:8091
+#   Mock LMS       http://localhost:8093
+#   Mailpit        http://localhost:8025
+#   MySQL          localhost:33070
+services:
+  web:
+    build: ./docker/php
+    command: sh -c "php bin/dev-setup.php && apache2-foreground"
+    ports: ["8090:80"]
+    volumes: ["./backend:/var/www/html"]
+    environment: &webenv
+      MAKESTUFF_ENV: development
+      MAKESTUFF_APP_URL: http://localhost:8090
+      MAKESTUFF_FRONTEND_URL: http://localhost:4200
+      MAKESTUFF_SECRET: dev-only-secret
+      MAKESTUFF_DB_HOST: db
+      MAKESTUFF_DB_PORT: "3306"
+      MAKESTUFF_DB_NAME: makestuff
+      MAKESTUFF_DB_USER: makestuff
+      MAKESTUFF_DB_PASS: makestuff
+      MAKESTUFF_MAIL_HOST: mailpit
+      MAKESTUFF_MAIL_PORT: "1025"
+    depends_on:
+      db: { condition: service_healthy }
+
+  db:
+    image: mysql:8.4
+    ports: ["33070:3306"]
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: makestuff
+      MYSQL_USER: makestuff
+      MYSQL_PASSWORD: makestuff
+    volumes:
+      - dbdata:/var/lib/mysql
+      - ./docker/mysql/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-uroot", "-proot"]
+      interval: 3s
+      timeout: 3s
+      retries: 40
+
+  phpmyadmin:
+    image: phpmyadmin:5
+    ports: ["8091:80"]
+    environment:
+      PMA_HOST: db
+      PMA_USER: root
+      PMA_PASSWORD: root
+    depends_on:
+      db: { condition: service_healthy }
+
+  mailpit:
+    image: axllent/mailpit:latest
+    ports: ["8025:8025"]
+
+  # A tiny fake LMS so you can try LTI launches, deep linking and grade
+  # passback without installing Moodle. Development only; never deployed.
+  mock-lms:
+    build: ./docker/php
+    ports: ["8093:80"]
+    volumes: ["./docker/mock-lms:/var/www/html"]
+
+  # Same code, but with no configuration: shows the web installer exactly as
+  # a shared-hosting customer sees it. Start with:
+  #   docker compose --profile installer up -d web-install
+  # Database to enter: host db, name makestuff_install, user/pass makestuff.
+  web-install:
+    profiles: ["installer"]
+    build: ./docker/php
+    command: sh -c "mkdir -p storage/uploads && chown -R www-data config storage && apache2-foreground"
+    ports: ["8092:80"]
+    volumes:
+      - ./backend:/var/www/html
+      - /var/www/html/config
+      - /var/www/html/storage
+    depends_on:
+      db: { condition: service_healthy }
+
+volumes:
+  dbdata:

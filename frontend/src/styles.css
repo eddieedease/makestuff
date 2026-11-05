@@ -1,0 +1,47 @@
+@import "tailwindcss";
+@plugin "@tailwindcss/typography";
+
+@theme {
+  --color-paper: #f6f3ed;
+  --color-surface: #fffdf9;
+  --color-ink: #1f1b16;
+  --color-muted: #6e665b;
+  --color-line: #e3ddd2;
+  --color-line-strong: #cfc7b9;
+  --color-accent: #1f5c4a;
+  --color-accent-dark: #174638;
+  --color-accent-soft: #e2efe9;
+  --color-danger: #a33a24;
+  --color-danger-soft: #fbe9e5;
+  --color-warn: #8a5a10;
+  --color-warn-soft: #fbf0d9;
+  --color-info: #2b5a8a;
+  --color-info-soft: #e4edf6;
+  --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-display: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+}
+
+@layer base {
+  html { @apply h-full; }
+  body { @apply min-h-full bg-paper text-ink font-sans antialiased; }
+  h1, h2, h3 { @apply font-display; }
+  :focus-visible { @apply outline-2 outline-offset-2 outline-accent; }
+  button { cursor: pointer; }
+  button:disabled { cursor: not-allowed; }
+}
+
+@layer components {
+  .btn-primary, .btn-ghost, .btn-quiet, .btn-danger { @apply inline-flex items-center justify-center gap-2 rounded-lg px-3.5 py-2 text-sm font-semibold transition-colors disabled:opacity-50; }
+  .btn-primary { @apply bg-accent text-surface hover:bg-accent-dark; }
+  .btn-ghost { @apply text-ink ring-1 ring-inset ring-line-strong hover:bg-line/50; }
+  .btn-quiet { @apply text-muted hover:bg-line/50 hover:text-ink; }
+  .btn-danger { @apply text-danger ring-1 ring-inset ring-danger/40 hover:bg-danger-soft; }
+  .input { @apply block w-full rounded-lg border border-line-strong bg-surface px-3 py-2 text-sm text-ink placeholder:text-muted/70 focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent; }
+  .label { @apply block text-sm font-medium text-ink; }
+  .label > .input { @apply mt-1; }
+  .hint { @apply mt-1 block text-xs font-normal text-muted; }
+  .card { @apply rounded-xl border border-line bg-surface; }
+  .pill { @apply inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold; }
+  .alert-error { @apply rounded-lg bg-danger-soft px-3 py-2 text-sm text-danger; }
+  .alert-ok { @apply rounded-lg bg-accent-soft px-3 py-2 text-sm text-accent-dark; }
+}
