@@ -59,6 +59,14 @@ export const LEARNING_TYPES: LearningTypeUi[] = [
     editor: () => import('../editors/concept-map-editor').then((m) => m.ConceptMapEditor),
     player: () => import('../player/concept-map-player').then((m) => m.ConceptMapPlayer),
   },
+  {
+    key: 'drag_drop',
+    label: 'Drag and drop',
+    blurb: 'Sort cards into categories, match pairs or put steps in order.',
+    tag: 'bg-paper text-muted ring-1 ring-inset ring-line-strong',
+    editor: () => import('../editors/drag-drop-editor').then((m) => m.DragDropEditor),
+    player: () => import('../player/drag-drop-player').then((m) => m.DragDropPlayer),
+  },
 ];
 
 export function learningType(key: string): LearningTypeUi | undefined {

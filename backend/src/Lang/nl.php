@@ -224,4 +224,9 @@ Begin hier met schrijven.
     'Choose where learners start.' => 'Kies waar cursisten beginnen.',
     '"{name}" is not connected, so learners never see it.' => '"{name}" is niet verbonden, dus cursisten zien het nooit.',
     'Open every idea first' => 'Open eerst alle ideeën',
+    'Add at least two cards.' => 'Voeg minstens twee kaarten toe.',
+    'Add at least two categories.' => 'Voeg minstens twee categorieën toe.',
+    'Card {n}' => 'Kaart {n}',
+    'Two cards say "{text}".' => 'Twee kaarten hebben de tekst "{text}".',
+    '{label} has nothing to match.' => '{label} heeft niets om mee te koppelen.',
 ];

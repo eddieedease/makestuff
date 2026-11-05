@@ -233,6 +233,58 @@ ok('unconnected idea is caught', mapProblems.some((p) => p.startsWith('"Lone" is
 ok('broken connection is caught', mapProblems.includes('A connection does not join two ideas.'), JSON.stringify(mapProblems));
 await api('DELETE', `/api/objects/${mapDraft.id}`, { token: user });
 
+console.log('Drag and drop');
+const dd = async (object) => {
+  const l = await launch13(`object=${object}&role=Learner&user=dd${object}${Date.now()}`);
+  const launch = tokenFrom((await post(l.url, l.data)).headers.get('location'));
+  return { launch, session: await api('GET', '/api/play/session', { launch }) };
+};
+const place = (content, answers) => Object.fromEntries(content.cards.map((c) => [c.id, content.targets.find((x) => x.label === answers[c.text]).id]));
+
+const sort = await dd('demo-sort');
+const sortContent = sort.session.json.object.content;
+const sortText = JSON.stringify(sortContent);
+ok('sort: answers stay on the server', !/categoryId|feedback|prompt|"i1"/.test(sortText), sortText);
+const sortAnswers = { Newspaper: 'Paper', 'Cardboard box': 'Paper', 'Jam jar': 'Glass', 'Wine bottle': 'Glass', 'Greasy pizza box': 'General waste', 'Broken mirror': 'Glass' };
+const sortDone = await api('POST', '/api/play/submit', { launch: sort.launch, body: { answers: { placements: place(sortContent, sortAnswers) } } });
+const sortResult = sortDone.json.attempt?.result;
+ok('sort: scores cards in the right category', sortResult?.detail.correct === 5 && sortResult.detail.total === 6, sortDone.text);
+ok('sort: score rolls up per category', sortResult?.detail.categories.find((x) => x.id === 'rest').percentage === 50, sortDone.text);
+const wrongCard = sortResult?.detail.cards.find((x) => x.text === 'Broken mirror');
+ok('sort: wrong card shows answer and feedback', !wrongCard.correct && wrongCard.answer === 'General waste' && wrongCard.feedback.startsWith('Mirror'), JSON.stringify(wrongCard));
+
+const match = await dd('demo-match');
+const matchContent = match.session.json.object.content;
+const matchText = JSON.stringify(matchContent);
+ok('match: card and prompt ids do not link up', !/"m1"/.test(matchText) && matchContent.cards.every((c) => !matchContent.targets.some((x) => x.id === c.id)), matchText);
+const matchDone = await api('POST', '/api/play/submit', { launch: match.launch, body: { answers: { placements: place(matchContent, { Amsterdam: 'The Netherlands', Brussels: 'Belgium', Berlin: 'Germany', Paris: 'France' }) } } });
+ok('match: all right scores 100%', matchDone.json.attempt?.result?.detail.percentage === 100 && matchDone.json.attempt.result.passed === true, matchDone.text);
+
+const steps = ['Stop what you are doing', 'Warn the people around you', 'Leave by the nearest exit', 'Go to the assembly point'];
+const order = await dd('demo-order');
+const orderContent = order.session.json.object.content;
+const orderings = new Set();
+for (let i = 0; i < 8; i++) orderings.add((await api('GET', '/api/play/session', { launch: order.launch })).json.object.content.cards.map((c) => c.text).join());
+ok('order: cards arrive shuffled', orderings.size > 1, [...orderings].join(' | '));
+const idsStable = (await api('GET', '/api/play/session', { launch: order.launch })).json.object.content.cards.map((c) => c.id).sort().join() === orderContent.cards.map((c) => c.id).sort().join();
+ok('order: card ids stay stable for resuming', idsStable);
+const swapped = Object.fromEntries(steps.map((text, i) => [text, String(i < 2 ? 2 - i : i + 1)]));
+const orderDone = await api('POST', '/api/play/submit', { launch: order.launch, body: { answers: { placements: place(orderContent, swapped) } } });
+ok('order: two swapped steps score 50%', orderDone.json.attempt?.result?.detail.percentage === 50 && orderDone.json.attempt.result.passed === false, orderDone.text);
+ok('order: grade reaches the LMS', orderDone.json.attempt.passback_status === 'sent', orderDone.text);
+const forgedDd = await dd('demo-sort');
+const forgedDone = await api('POST', '/api/play/submit', { launch: forgedDd.launch, body: { answers: { placements: { i1: 'paper', fake: 'glass' } } } });
+ok('forged placements score nothing', forgedDone.json.attempt?.result?.detail.correct === 0, forgedDone.text);
+const ddDraft = (await api('POST', '/api/objects', { token: user, body: { type: 'drag_drop', title: 'D' } })).json.object;
+const ddEmpty = await api('POST', `/api/objects/${ddDraft.id}/publish`, { token: user });
+ok('empty exercise cannot be published', ddEmpty.status === 422 && ddEmpty.json.details.problems.includes('Add at least two cards.'), ddEmpty.text);
+ddDraft.content.settings.mode = 'order';
+ddDraft.content.items = [{ id: 'a', text: 'Same' }, { id: 'b', text: 'Same' }];
+await api('PUT', `/api/objects/${ddDraft.id}`, { token: user, body: { title: 'D', description: '', content: ddDraft.content } });
+const ddTwins = await api('POST', `/api/objects/${ddDraft.id}/publish`, { token: user });
+ok('identical cards are caught', ddTwins.status === 422 && ddTwins.json.details.problems.some((p) => p.startsWith('Two cards say')), ddTwins.text);
+await api('DELETE', `/api/objects/${ddDraft.id}`, { token: user });
+
 console.log('Languages');
 const nlHeaders = { 'Content-Type': 'application/json', 'Accept-Language': 'nl' };
 const nlError = await (await fetch(API + '/api/auth/login', { method: 'POST', headers: nlHeaders, body: '{"username":"x","password":"y"}' })).json();

@@ -8,6 +8,7 @@ Create learning objects and serve them to any LMS over LTI 1.1 and 1.3.
 | **Quiz** | Scored questions in categories, with a score per category. Pass mark, attempts, shuffle, optional feedback per question | Best score |
 | **Scan** | Statements rated from 1 to 5 in categories. You set percentage ranges per category, and each range has its own feedback | Completion |
 | **Decision tree** | Branching scenario on a visual map. Choices lead to different endings, each with its own score | Completion, or score from the ending reached |
+| **Drag and drop** | Sort cards into categories, match pairs, or put steps in order. Works by mouse, touch and keyboard | Score |
 | **Concept map** | Graph of ideas joined by labelled connections. Learners explore by opening ideas, optionally revealing the map step by step | Completion |
 
 Built with PHP 8 and MySQL/MariaDB, without Composer, so it runs on shared hosting. The frontend is Angular with Tailwind. The interface is available in English and Dutch.
