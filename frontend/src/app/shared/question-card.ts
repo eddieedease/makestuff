@@ -2,20 +2,21 @@ import { Component, computed, input, output } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Question, QuestionReview } from '../core/models';
 import { MarkdownPipe } from './markdown';
+import { TPipe } from '../i18n/i18n';
 
 /** One question. Used by the quiz player, the e-learning player and result reviews. */
 @Component({
   selector: 'app-question-card',
-  imports: [FormsModule, MarkdownPipe],
+  imports: [FormsModule, MarkdownPipe, TPipe],
   template: `
     <fieldset class="min-w-0">
       <legend class="prose prose-stone max-w-none font-medium" [innerHTML]="question().text | markdown"></legend>
       @if (question().type === 'multiple') {
-        <p class="mt-1 text-xs text-muted">Choose all that apply.</p>
+        <p class="mt-1 text-xs text-muted">{{ 'Choose all that apply.' | t }}</p>
       }
 
       @if (question().type === 'text') {
-        <input class="input mt-3" aria-label="Your answer" [ngModel]="answer()" (ngModelChange)="answered.emit($event)" [disabled]="locked()" />
+        <input class="input mt-3" [attr.aria-label]="'Your answer' | t" [ngModel]="answer()" (ngModelChange)="answered.emit($event)" [disabled]="locked()" />
       } @else {
         <div class="mt-3 space-y-2">
           @for (option of question().options; track option.id) {
@@ -41,10 +42,10 @@ import { MarkdownPipe } from './markdown';
 
       @if (review(); as r) {
         <p class="mt-3 text-sm font-semibold" [class]="r.correct ? 'text-accent' : 'text-danger'">
-          {{ r.correct ? 'Correct' : 'Not quite' }}
+          {{ (r.correct ? 'Correct' : 'Not quite') | t }}
         </p>
         @if (question().type === 'text' && !r.correct && r.accepted.length) {
-          <p class="text-sm text-muted">Accepted answer: {{ r.accepted[0] }}</p>
+          <p class="text-sm text-muted">{{ 'Accepted answer: {answer}' | t: { answer: r.accepted[0] } }}</p>
         }
         @if (r.feedback) {
           <p class="mt-1 text-sm text-muted">{{ r.feedback }}</p>

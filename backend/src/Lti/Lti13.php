@@ -6,6 +6,7 @@ namespace App\Lti;
 use App\Core\Db;
 use App\Core\Http;
 use App\Core\HttpError;
+use App\Core\Lang;
 use App\Core\Url;
 
 final class Lti13
@@ -137,7 +138,7 @@ final class Lti13
         try {
             $response = Http::request('GET', $connection['keyset_url'], ['Accept: application/json']);
         } catch (\RuntimeException $e) {
-            throw new HttpError(502, 'Could not reach the LMS key set: ' . $e->getMessage());
+            throw new HttpError(502, Lang::t('Could not reach the LMS key set: {error}', ['error' => $e->getMessage()]));
         }
         $decoded = json_decode($response['body'], true);
         if ($response['status'] !== 200 || !isset($decoded['keys']) || !is_array($decoded['keys'])) {

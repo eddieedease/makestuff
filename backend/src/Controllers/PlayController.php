@@ -86,6 +86,7 @@ final class PlayController
         $attempt = $this->current($session);
         Response::json([
             'preview' => $session['kind'] === 'preview',
+            'locale' => $session['locale'],
             'learner' => ['name' => $session['learner_name'], 'role' => $session['role']],
             'object' => [
                 'type' => $object['type'],

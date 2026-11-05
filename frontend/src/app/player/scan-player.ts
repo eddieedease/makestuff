@@ -2,29 +2,30 @@ import { Component, computed, effect, inject, signal, untracked } from '@angular
 import { errorMessage } from '../core/auth';
 import { PlayStore } from './play-store';
 import { ResultFooter } from './result-footer';
+import { NumPipe, TPipe } from '../i18n/i18n';
 
 @Component({
-  imports: [ResultFooter],
+  imports: [ResultFooter, TPipe, NumPipe],
   template: `
     @if (result(); as r) {
       <section class="card p-6">
-        <p class="text-sm text-muted">Your overall score</p>
-        <p class="font-display text-5xl font-semibold tabular-nums">{{ r.overall }}%</p>
+        <p class="text-sm text-muted">{{ 'Your overall score' | t }}</p>
+        <p class="font-display text-5xl font-semibold tabular-nums">{{ r.overall | num }}%</p>
         @if (r.overallBand; as b) {
           <h2 class="mt-3 text-xl font-semibold">{{ b.title }}</h2>
           <p class="mt-1 text-sm">{{ b.advice }}</p>
         }
       </section>
 
-      <h2 class="mt-6 text-xl font-semibold">Your profile</h2>
+      <h2 class="mt-6 text-xl font-semibold">{{ 'Your profile' | t }}</h2>
       <div class="mt-3 space-y-3">
         @for (d of r.dimensions; track d.id) {
           <section class="card p-4">
             <div class="flex items-baseline justify-between gap-3">
               <h3 class="font-sans text-sm font-semibold">{{ d.name }}</h3>
-              <span class="text-sm tabular-nums text-muted">{{ d.percentage }}%</span>
+              <span class="text-sm tabular-nums text-muted">{{ d.percentage | num }}%</span>
             </div>
-            <div class="mt-2 h-2 overflow-hidden rounded-full bg-line" role="img" [attr.aria-label]="d.name + ': ' + d.percentage + ' percent'">
+            <div class="mt-2 h-2 overflow-hidden rounded-full bg-line" role="img" [attr.aria-label]="d.name + ': ' + d.percentage + '%'">
               <div class="h-full rounded-full bg-accent" [style.width.%]="d.percentage"></div>
             </div>
             @if (d.band; as b) {
@@ -36,7 +37,7 @@ import { ResultFooter } from './result-footer';
       <app-result-footer />
     } @else {
       @if (content().intro) { <p class="text-sm text-muted">{{ content().intro }}</p> }
-      <p class="mt-3 text-sm text-muted">{{ done() }} of {{ content().questions.length }} answered</p>
+      <p class="mt-3 text-sm text-muted">{{ '{done} of {total} answered' | t: { done: done(), total: content().questions.length } }}</p>
       <div class="mt-1 h-1.5 overflow-hidden rounded-full bg-line">
         <div class="h-full bg-accent transition-all" [style.width.%]="(done() / content().questions.length) * 100"></div>
       </div>
@@ -59,7 +60,7 @@ import { ResultFooter } from './result-footer';
       </div>
 
       @if (error()) { <p class="alert-error mt-3" role="alert">{{ error() }}</p> }
-      <button type="button" class="btn-primary mt-4" [disabled]="busy() || done() < content().questions.length" (click)="submit()">See my results</button>
+      <button type="button" class="btn-primary mt-4" [disabled]="busy() || done() < content().questions.length" (click)="submit()">{{ 'See my results' | t }}</button>
     }
   `,
 })

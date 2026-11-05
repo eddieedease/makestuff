@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace App\Controllers;
 
 use App\Core\HttpError;
+use App\Core\Lang;
 use App\Core\Request;
 use App\Core\Response;
 use App\Core\Url;
@@ -17,6 +18,8 @@ final class LtiController
     public function launch11(Request $r): void
     {
         $params = array_merge($r->query, $r->post);
+        $locale = Lang::normalize($params['launch_presentation_locale'] ?? null);
+        Lang::set($locale);
         // The signature covers the URL the LMS used, so it is built from the configured base URL.
         $connection = Lti11::verify(Url::base() . $r->path, $params);
 
@@ -38,6 +41,7 @@ final class LtiController
             'resource_link_id' => (string) $params['resource_link_id'],
             'outcome_url' => $params['lis_outcome_service_url'] ?? null,
             'outcome_sourcedid' => $params['lis_result_sourcedid'] ?? null,
+            'locale' => $locale,
         ]));
     }
 
@@ -46,7 +50,7 @@ final class LtiController
         $input = array_merge($r->query, $r->post);
         foreach (['iss', 'login_hint', 'target_link_uri'] as $required) {
             if (empty($input[$required])) {
-                throw new HttpError(400, "The LMS did not send $required.");
+                throw new HttpError(400, Lang::t('The LMS did not send {field}.', ['field' => $required]));
             }
         }
         $connection = Lti13::connection((string) $input['iss'], (string) ($input['client_id'] ?? ''));
@@ -61,6 +65,9 @@ final class LtiController
             throw new HttpError(400, 'The launch is missing its token.');
         }
         [$connection, $claims] = Lti13::validate($state, $idToken);
+        $presentation = $claims[Lti13::CLAIM . 'launch_presentation'] ?? [];
+        $locale = Lang::normalize($presentation['locale'] ?? $claims['locale'] ?? null);
+        Lang::set($locale);
 
         $base = [
             'connection_id' => $connection['id'],
@@ -70,6 +77,7 @@ final class LtiController
             'learner_email' => $claims['email'] ?? null,
             'role' => Launch::isInstructor((array) ($claims[Lti13::CLAIM . 'roles'] ?? [])) ? 'instructor' : 'learner',
             'context_title' => $claims[Lti13::CLAIM . 'context']['title'] ?? null,
+            'locale' => $locale,
         ];
 
         $messageType = $claims[Lti13::CLAIM . 'message_type'] ?? '';

@@ -3,27 +3,29 @@ import { Component, inject, input, OnInit, signal } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 import { errorMessage } from '../core/auth';
 import { learningType } from '../core/learning-types';
+import { TPipe } from '../i18n/i18n';
 
 interface Pickable { public_id: string; type: string; title: string; description: string }
 
 /** LTI 1.3 Deep Linking: shown inside the LMS when a teacher adds an activity. */
 @Component({
+  imports: [TPipe],
   template: `
     <main class="mx-auto max-w-2xl px-4 py-6">
-      <h1 class="text-2xl font-semibold">Choose an activity</h1>
-      @if (context()) { <p class="mt-1 text-sm text-muted">For {{ context() }}</p> }
+      <h1 class="text-2xl font-semibold">{{ 'Choose an activity' | t }}</h1>
+      @if (context()) { <p class="mt-1 text-sm text-muted">{{ 'For {course}' | t: { course: context() ?? '' } }}</p> }
       @if (error()) { <p class="alert-error mt-4" role="alert">{{ error() }}</p> }
       <ul class="mt-4 space-y-2">
         @for (o of objects(); track o.public_id) {
           <li>
             <button type="button" class="card w-full p-4 text-left hover:border-accent disabled:opacity-60" [disabled]="busy()" (click)="choose(o)">
-              <span class="pill" [class]="tag(o.type)">{{ label(o.type) }}</span>
+              <span class="pill" [class]="tag(o.type)">{{ label(o.type) | t }}</span>
               <span class="mt-1 block font-medium">{{ o.title }}</span>
               @if (o.description) { <span class="block text-sm text-muted">{{ o.description }}</span> }
             </button>
           </li>
         } @empty {
-          @if (loaded()) { <li class="text-sm text-muted">Nothing is published yet.</li> }
+          @if (loaded()) { <li class="text-sm text-muted">{{ 'Nothing is published yet.' | t }}</li> }
         }
       </ul>
     </main>

@@ -14,6 +14,7 @@ use App\Controllers\PlayController;
 use App\Controllers\UserController;
 use App\Core\Config;
 use App\Core\HttpError;
+use App\Core\Lang;
 use App\Core\Request;
 use App\Core\Response;
 use App\Core\Router;
@@ -26,6 +27,7 @@ final class App
         ini_set('display_errors', '0');
         $request = Request::fromGlobals();
         Url::$request = $request;
+        Lang::set(Lang::fromHeader($request->header('Accept-Language')));
         self::securityHeaders($request);
 
         $isApi = strpos($request->path, '/api/') === 0;
@@ -48,17 +50,17 @@ final class App
             self::serveApp($request);
         } catch (HttpError $e) {
             if ($isApi || $request->path === '/lti/1.3/jwks') {
-                Response::json(['error' => $e->getMessage(), 'details' => $e->details], $e->status);
+                Response::json(['error' => Lang::t($e->getMessage()), 'details' => $e->details], $e->status);
             } else {
-                Response::errorPage('Something went wrong', $e->getMessage(), $e->status);
+                Response::errorPage(Lang::t('Something went wrong'), Lang::t($e->getMessage()), $e->status);
             }
         } catch (\Throwable $e) {
             error_log('[makestuff] ' . $e);
-            $message = Config::isDev() ? $e->getMessage() : 'Unexpected server error';
+            $message = Config::isDev() ? $e->getMessage() : Lang::t('Unexpected server error');
             if ($isApi) {
                 Response::json(['error' => $message], 500);
             } else {
-                Response::errorPage('Something went wrong', $message, 500);
+                Response::errorPage(Lang::t('Something went wrong'), $message, 500);
             }
         }
     }
@@ -103,7 +105,6 @@ final class App
         $r->add('PUT', '/api/users/{id}', [UserController::class, 'update']);
         $r->add('DELETE', '/api/users/{id}', [UserController::class, 'delete']);
 
-        $r->add('GET', '/api/types', [ObjectController::class, 'types']);
         $r->add('POST', '/api/render/markdown', [ObjectController::class, 'renderMarkdown']);
         $r->add('GET', '/api/objects', [ObjectController::class, 'index']);
         $r->add('POST', '/api/objects', [ObjectController::class, 'create']);

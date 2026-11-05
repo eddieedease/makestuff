@@ -1,4 +1,4 @@
-# Development stack. Angular runs on your machine (`npm start` in frontend/).
+# Development stack. Angular runs on your machine (`npm start`).
 #   API + LTI      http://localhost:8090
 #   phpMyAdmin     http://localhost:8091
 #   Mock LMS       http://localhost:8093

@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace App\Types;
 
 use App\Core\HttpError;
+use App\Core\Lang;
 
 /** { settings: {passPercentage, shuffleQuestions, immediateFeedback, showAnswers, maxAttempts}, questions: [...] } */
 final class QuizType extends LearningType
@@ -40,9 +41,9 @@ final class QuizType extends LearningType
     public function validate(array $content): array
     {
         $questions = $content['questions'] ?? [];
-        $problems = $questions === [] ? ['Add at least one question.'] : [];
+        $problems = $questions === [] ? [Lang::t('Add at least one question.')] : [];
         foreach ($questions as $index => $question) {
-            $problems = array_merge($problems, Questions::problems($question, 'Question ' . ($index + 1)));
+            $problems = array_merge($problems, Questions::problems($question, Lang::t('Question {n}', ['n' => $index + 1])));
         }
         return $problems;
     }

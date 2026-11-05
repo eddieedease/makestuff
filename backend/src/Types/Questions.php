@@ -3,6 +3,8 @@ declare(strict_types=1);
 
 namespace App\Types;
 
+use App\Core\Lang;
+
 /**
  * The question model shared by quizzes and e-learning.
  * { id, type: single|multiple|truefalse|text, text, points, feedback,
@@ -65,23 +67,23 @@ final class Questions
     {
         $problems = [];
         if (trim((string) ($q['text'] ?? '')) === '') {
-            $problems[] = "$label has no question text.";
+            $problems[] = Lang::t('{label} has no question text.', ['label' => $label]);
         }
         $type = $q['type'] ?? 'single';
         if ($type === 'text') {
             if (array_filter($q['accepted'] ?? [], static fn ($a) => trim((string) $a) !== '') === []) {
-                $problems[] = "$label needs at least one accepted answer.";
+                $problems[] = Lang::t('{label} needs at least one accepted answer.', ['label' => $label]);
             }
             return $problems;
         }
         $right = self::correctIds($q);
         if (count($q['options'] ?? []) < 2) {
-            $problems[] = "$label needs at least two options.";
+            $problems[] = Lang::t('{label} needs at least two options.', ['label' => $label]);
         }
         if ($right === []) {
-            $problems[] = "$label has no correct option marked.";
+            $problems[] = Lang::t('{label} has no correct option marked.', ['label' => $label]);
         } elseif ($type !== 'multiple' && count($right) > 1) {
-            $problems[] = "$label allows one answer but has several marked correct.";
+            $problems[] = Lang::t('{label} allows one answer but has several marked correct.', ['label' => $label]);
         }
         return $problems;
     }

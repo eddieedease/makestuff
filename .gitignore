@@ -1,9 +1,12 @@
 node_modules/
 dist/
 .angular/
-release/
 .DS_Store
 backend/config/config.php
 backend/storage/uploads/*
 !backend/storage/uploads/.gitkeep
 backend/app.html
+.vscode/*
+!.vscode/extensions.json
+!.vscode/launch.json
+!.vscode/tasks.json

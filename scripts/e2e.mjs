@@ -136,6 +136,28 @@ const chosen = await api('POST', '/api/pick', { launch: pick, body: { public_ids
 const back = await (await post(chosen.json.return_url, { JWT: chosen.json.jwt })).text();
 ok('LMS accepted the signed response', back.includes('Linked: Web safety basics'), back.slice(0, 200));
 
+console.log('Languages');
+const nlHeaders = { 'Content-Type': 'application/json', 'Accept-Language': 'nl' };
+const nlError = await (await fetch(API + '/api/auth/login', { method: 'POST', headers: nlHeaders, body: '{"username":"x","password":"y"}' })).json();
+ok('API errors follow Accept-Language', nlError.error === 'Onjuiste gebruikersnaam of wachtwoord', JSON.stringify(nlError));
+const nlDraft = await (await fetch(API + '/api/objects', { method: 'POST', headers: { ...nlHeaders, Authorization: `Bearer ${user}` }, body: '{"type":"scan","title":"T"}' })).json();
+ok('new content starts in that language', nlDraft.object.content.scale[0].label === 'Helemaal oneens');
+const nlPublish = await (await fetch(`${API}/api/objects/${nlDraft.object.id}/publish`, { method: 'POST', headers: { ...nlHeaders, Authorization: `Bearer ${user}` } })).json();
+ok('publish problems are translated', nlPublish.details.problems.includes('Voeg minstens één dimensie toe.'), JSON.stringify(nlPublish));
+await api('DELETE', `/api/objects/${nlDraft.object.id}`, { token: user });
+const nl13 = await launch13('object=demo-quiz&role=Learner&user=dutch13&locale=nl-NL');
+const nlS13 = await api('GET', '/api/play/session', { launch: tokenFrom((await post(nl13.url, nl13.data)).headers.get('location')) });
+ok('LTI 1.3 launch carries the LMS language', nlS13.json.locale === 'nl', JSON.stringify(nlS13.json.locale));
+const nl11Html = await (await fetch(`${LMS}/launch11?object=demo-quiz&user=dutch11&role=Learner&locale=nl-BE`)).text();
+const nlS11 = await api('GET', '/api/play/session', { launch: tokenFrom((await post(action(nl11Html), fields(nl11Html))).headers.get('location')) });
+ok('LTI 1.1 launch carries the LMS language', nlS11.json.locale === 'nl', JSON.stringify(nlS11.json.locale));
+const enHtml = await (await fetch(`${LMS}/launch11?object=demo-quiz&user=en11&role=Learner&locale=fr-FR`)).text();
+const frS = await api('GET', '/api/play/session', { launch: tokenFrom((await post(action(enHtml), fields(enHtml))).headers.get('location')) });
+ok('unsupported LMS language leaves the choice to the browser', frS.json.locale === null);
+const setNl = await api('PUT', '/api/auth/me', { token: user, body: { locale: 'nl' } });
+ok('language is saved on the account', setNl.json.user.locale === 'nl' && (await api('GET', '/api/auth/me', { token: user })).json.user.locale === 'nl');
+await api('PUT', '/api/auth/me', { token: user, body: { locale: 'en' } });
+
 console.log('Unpublished content');
 const quiz = userList.find(o => o.public_id === 'demo-quiz');
 await api('POST', `/api/objects/${quiz.id}/unpublish`, { token: user });

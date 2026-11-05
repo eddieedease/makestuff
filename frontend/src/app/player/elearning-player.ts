@@ -4,25 +4,26 @@ import { QuestionReview, Segment } from '../core/models';
 import { Segments } from '../shared/segments';
 import { PlayStore } from './play-store';
 import { ResultFooter } from './result-footer';
+import { NumPipe, TPipe } from '../i18n/i18n';
 
 interface Page { id: string; title: string; segments: Segment[] }
 
 @Component({
-  imports: [Segments, ResultFooter],
+  imports: [Segments, ResultFooter, TPipe, NumPipe],
   template: `
     @if (store.session()!.attempt.result; as result) {
       <section class="card p-6">
-        <h2 class="text-2xl font-semibold">Course finished</h2>
+        <h2 class="text-2xl font-semibold">{{ 'Course finished' | t }}</h2>
         @if (result.detail.graded) {
-          <p class="mt-2 text-sm">You answered {{ result.detail.correct }} of {{ result.detail.total }} questions correctly ({{ result.detail.percentage }}%).
-            {{ result.passed ? 'You passed.' : 'That is below the pass mark.' }}</p>
+          <p class="mt-2 text-sm">{{ 'You answered {correct} of {total} questions correctly ({percent}%).' | t: { correct: result.detail.correct, total: result.detail.total, percent: result.detail.percentage | num } }}
+            {{ (result.passed ? 'You passed.' : 'That is below the pass mark.') | t }}</p>
         } @else {
-          <p class="mt-2 text-sm">Well done, you have completed this course.</p>
+          <p class="mt-2 text-sm">{{ 'Well done, you have completed this course.' | t }}</p>
         }
         <app-result-footer />
       </section>
     } @else {
-      <nav class="mb-5" aria-label="Course pages">
+      <nav class="mb-5" [attr.aria-label]="'Course pages' | t">
         <div class="h-1.5 overflow-hidden rounded-full bg-line" role="progressbar" [attr.aria-valuenow]="percent()" aria-valuemin="0" aria-valuemax="100">
           <div class="h-full bg-accent transition-all" [style.width.%]="percent()"></div>
         </div>
@@ -47,11 +48,11 @@ interface Page { id: string; title: string; segments: Segment[] }
 
       @if (error()) { <p class="alert-error mt-3" role="alert">{{ error() }}</p> }
       <div class="mt-4 flex justify-between">
-        <button type="button" class="btn-ghost" [disabled]="index() === 0" (click)="go(index() - 1)">Previous</button>
+        <button type="button" class="btn-ghost" [disabled]="index() === 0" (click)="go(index() - 1)">{{ 'Previous' | t }}</button>
         @if (index() < pages().length - 1) {
-          <button type="button" class="btn-primary" (click)="go(index() + 1)">Next</button>
+          <button type="button" class="btn-primary" (click)="go(index() + 1)">{{ 'Next' | t }}</button>
         } @else {
-          <button type="button" class="btn-primary" [disabled]="busy()" (click)="finish()">Finish</button>
+          <button type="button" class="btn-primary" [disabled]="busy()" (click)="finish()">{{ 'Finish' | t }}</button>
         }
       </div>
     }

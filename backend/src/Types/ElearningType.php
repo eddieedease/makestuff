@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace App\Types;
 
 use App\Core\HttpError;
+use App\Core\Lang;
 
 /** { settings: {grading: completion|questions, passPercentage}, pages: [{id, title, markdown}] } */
 final class ElearningType extends LearningType
@@ -29,8 +30,8 @@ final class ElearningType extends LearningType
             'settings' => ['grading' => 'completion', 'passPercentage' => 70],
             'pages' => [[
                 'id' => 'p' . bin2hex(random_bytes(4)),
-                'title' => 'Introduction',
-                'markdown' => "# Welcome\n\nStart writing here.\n",
+                'title' => Lang::t('Introduction'),
+                'markdown' => Lang::t("# Welcome\n\nStart writing here.\n"),
             ]],
         ];
     }
@@ -40,19 +41,19 @@ final class ElearningType extends LearningType
         $problems = [];
         $pages = $content['pages'] ?? [];
         if ($pages === []) {
-            $problems[] = 'Add at least one page.';
+            $problems[] = Lang::t('Add at least one page.');
         }
         foreach ($pages as $index => $page) {
-            $label = 'Page ' . ($index + 1);
+            $label = Lang::t('Page {n}', ['n' => $index + 1]);
             if (trim((string) ($page['markdown'] ?? '')) === '') {
-                $problems[] = "$label is empty.";
+                $problems[] = Lang::t('{label} is empty.', ['label' => $label]);
             }
             foreach (Directives::parse((string) ($page['markdown'] ?? '')) as $segment) {
                 if ($segment['kind'] === 'error') {
-                    $problems[] = "$label: {$segment['message']}";
+                    $problems[] = $label . ': ' . $segment['message'];
                 }
                 if ($segment['kind'] === 'question') {
-                    $problems = array_merge($problems, Questions::problems($segment['question'], "A question on $label"));
+                    $problems = array_merge($problems, Questions::problems($segment['question'], Lang::t('A question on {page}', ['page' => $label])));
                 }
             }
         }

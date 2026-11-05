@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace App\Types;
 
 use App\Core\HttpError;
+use App\Core\Lang;
 
 final class Registry
 {
@@ -20,6 +21,6 @@ final class Registry
                 return $type;
             }
         }
-        throw new HttpError(422, 'Unknown learning type: ' . $key);
+        throw new HttpError(422, Lang::t('Unknown learning type: {type}', ['type' => $key]));
     }
 }

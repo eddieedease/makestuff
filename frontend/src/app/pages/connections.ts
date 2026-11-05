@@ -3,6 +3,7 @@ import { FormsModule } from '@angular/forms';
 import { Api } from '../core/api';
 import { errorMessage } from '../core/auth';
 import { Connection } from '../core/models';
+import { TPipe, t } from '../i18n/i18n';
 import { CopyRow } from './item-embed';
 
 const FIELDS_13: { key: string; label: string; hint: string }[] = [
@@ -15,41 +16,41 @@ const FIELDS_13: { key: string; label: string; hint: string }[] = [
 ];
 
 @Component({
-  imports: [FormsModule, CopyRow],
+  imports: [FormsModule, CopyRow, TPipe],
   template: `
     <div class="mx-auto max-w-5xl px-4 py-8 md:px-8">
       <div class="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 class="text-3xl font-semibold">LMS connections</h1>
-          <p class="mt-1 text-sm text-muted">Only connected systems can launch your content.</p>
+          <h1 class="text-3xl font-semibold">{{ 'LMS connections' | t }}</h1>
+          <p class="mt-1 text-sm text-muted">{{ 'Only connected systems can launch your content.' | t }}</p>
         </div>
         <div class="flex gap-2">
-          <button type="button" class="btn-ghost" (click)="start('1.1')">New LTI 1.1</button>
-          <button type="button" class="btn-primary" (click)="start('1.3')">New LTI 1.3</button>
+          <button type="button" class="btn-ghost" (click)="start('1.1')">{{ 'New LTI 1.1' | t }}</button>
+          <button type="button" class="btn-primary" (click)="start('1.3')">{{ 'New LTI 1.3' | t }}</button>
         </div>
       </div>
       @if (error()) { <p class="alert-error mt-4" role="alert">{{ error() }}</p> }
 
       @if (form(); as f) {
         <form class="card mt-4 grid gap-4 p-5 md:grid-cols-2" (ngSubmit)="save()">
-          <label class="label md:col-span-2">Name <input class="input" name="name" required placeholder="School Moodle" [(ngModel)]="f.name" /></label>
+          <label class="label md:col-span-2">{{ 'Name' | t }} <input class="input" name="name" required [placeholder]="'School Moodle' | t" [(ngModel)]="f.name" /></label>
           @if (f.version === '1.3') {
             @for (field of fields; track field.key) {
-              <label class="label">{{ field.label }}
+              <label class="label">{{ field.label | t }}
                 <input class="input" [name]="field.key" [(ngModel)]="f[field.key]" />
-                @if (field.hint) { <span class="hint">{{ field.hint }}</span> }
+                @if (field.hint) { <span class="hint">{{ field.hint | t }}</span> }
               </label>
             }
           } @else {
-            <label class="label md:col-span-2">Consumer key
-              <input class="input" name="consumer_key" placeholder="Generated if left empty" [(ngModel)]="f.consumer_key" />
-              <span class="hint">The shared secret is generated when you save.</span>
+            <label class="label md:col-span-2">{{ 'Consumer key' | t }}
+              <input class="input" name="consumer_key" [placeholder]="'Generated if left empty' | t" [(ngModel)]="f.consumer_key" />
+              <span class="hint">{{ 'The shared secret is generated when you save.' | t }}</span>
             </label>
           }
-          <label class="label flex items-center gap-2 md:col-span-2"><input type="checkbox" class="accent-accent" name="active" [(ngModel)]="f.is_active" /> Active</label>
+          <label class="label flex items-center gap-2 md:col-span-2"><input type="checkbox" class="accent-accent" name="active" [(ngModel)]="f.is_active" /> {{ 'Active' | t }}</label>
           <div class="flex gap-2 md:col-span-2">
-            <button class="btn-primary">Save</button>
-            <button type="button" class="btn-ghost" (click)="form.set(null)">Cancel</button>
+            <button class="btn-primary">{{ 'Save' | t }}</button>
+            <button type="button" class="btn-ghost" (click)="form.set(null)">{{ 'Cancel' | t }}</button>
           </div>
         </form>
       }
@@ -60,23 +61,23 @@ const FIELDS_13: { key: string; label: string; hint: string }[] = [
             <div class="flex flex-wrap items-center gap-2">
               <h2 class="text-lg font-semibold">{{ c.name }}</h2>
               <span class="pill bg-info-soft text-info">LTI {{ c.version }}</span>
-              @if (!c.is_active) { <span class="pill bg-line text-muted">Inactive</span> }
+              @if (!c.is_active) { <span class="pill bg-line text-muted">{{ 'Inactive' | t }}</span> }
               <span class="ml-auto flex gap-1">
-                <button type="button" class="btn-quiet !px-2 !py-1" (click)="form.set(copy(c))">Edit</button>
-                <button type="button" class="btn-quiet !px-2 !py-1 hover:!text-danger" (click)="remove(c)">Delete</button>
+                <button type="button" class="btn-quiet !px-2 !py-1" (click)="form.set(copy(c))">{{ 'Edit' | t }}</button>
+                <button type="button" class="btn-quiet !px-2 !py-1 hover:!text-danger" (click)="remove(c)">{{ 'Delete' | t }}</button>
               </span>
             </div>
             @if (c.version === '1.1') {
               <div class="mt-1 grid gap-x-6 md:grid-cols-2">
-                <app-copy-row label="Consumer key" [value]="c.consumer_key ?? ''" />
-                <app-copy-row label="Shared secret" [value]="c.shared_secret ?? ''" />
+                <app-copy-row [label]="'Consumer key' | t" [value]="c.consumer_key ?? ''" />
+                <app-copy-row [label]="'Shared secret' | t" [value]="c.shared_secret ?? ''" />
               </div>
             } @else {
-              <p class="mt-1 truncate text-sm text-muted">{{ c.issuer }} · client {{ c.client_id }}</p>
+              <p class="mt-1 truncate text-sm text-muted">{{ 'LMS {issuer}, client {client}' | t: { issuer: c.issuer ?? '', client: c.client_id ?? '' } }}</p>
             }
           </section>
         } @empty {
-          <p class="card px-4 py-10 text-center text-sm text-muted">No LMS connected yet.</p>
+          <p class="card px-4 py-10 text-center text-sm text-muted">{{ 'No LMS connected yet.' | t }}</p>
         }
       </div>
     </div>
@@ -119,7 +120,7 @@ export class Connections implements OnInit {
   }
 
   async remove(connection: Connection): Promise<void> {
-    if (!confirm(`Delete ${connection.name}? It will no longer be able to launch content.`)) return;
+    if (!confirm(t('Delete {name}? It will no longer be able to launch content.', { name: connection.name }))) return;
     await this.api.deleteConnection(connection.id);
     await this.load();
   }

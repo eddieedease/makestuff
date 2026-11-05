@@ -35,22 +35,22 @@
         }
       },
       "root": "",
-      "sourceRoot": "src",
+      "sourceRoot": "frontend/src",
       "prefix": "app",
       "architect": {
         "build": {
           "builder": "@angular/build:application",
           "options": {
-            "browser": "src/main.ts",
+            "browser": "frontend/src/main.ts",
             "tsConfig": "tsconfig.app.json",
             "assets": [
               {
                 "glob": "**/*",
-                "input": "public"
+                "input": "frontend/public"
               }
             ],
             "styles": [
-              "src/styles.css"
+              "frontend/src/styles.css"
             ]
           },
           "configurations": {
@@ -67,7 +67,33 @@
                   "maximumError": "8kB"
                 }
               ],
-              "outputHashing": "all"
+              "outputHashing": "all",
+              "outputPath": {
+                "base": "dist/makestuff",
+                "browser": ""
+              },
+              "baseHref": "./",
+              "index": {
+                "input": "frontend/src/index.html",
+                "output": "app.html"
+              },
+              "assets": [
+                {
+                  "glob": "**/*",
+                  "input": "frontend/public"
+                },
+                {
+                  "glob": "**/*",
+                  "input": "backend",
+                  "output": "/",
+                  "ignore": [
+                    "bin/**",
+                    "config/config.php",
+                    "storage/uploads/*.{jpg,png,gif,webp}",
+                    "app.html"
+                  ]
+                }
+              ]
             },
             "development": {
               "optimization": false,

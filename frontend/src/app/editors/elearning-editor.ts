@@ -3,6 +3,7 @@ import { FormsModule } from '@angular/forms';
 import { Api } from '../core/api';
 import { errorMessage } from '../core/auth';
 import { Segment } from '../core/models';
+import { TPipe, t } from '../i18n/i18n';
 import { Segments } from '../shared/segments';
 
 const SNIPPETS: { label: string; text: string }[] = [
@@ -13,11 +14,11 @@ const SNIPPETS: { label: string; text: string }[] = [
 ];
 
 @Component({
-  imports: [FormsModule, Segments],
+  imports: [FormsModule, Segments, TPipe],
   template: `
     <div class="grid gap-4 xl:grid-cols-[13rem_1fr]">
       <aside>
-        <h2 class="text-xs font-semibold uppercase tracking-wide text-muted">Pages</h2>
+        <h2 class="text-xs font-semibold uppercase tracking-wide text-muted">{{ 'Pages' | t }}</h2>
         <ol class="mt-2 space-y-1">
           @for (page of content().pages; track page.id; let i = $index) {
             <li>
@@ -26,19 +27,19 @@ const SNIPPETS: { label: string; text: string }[] = [
                 class="w-full truncate rounded-lg px-3 py-2 text-left text-sm"
                 [class]="i === index() ? 'bg-accent-soft font-medium text-accent-dark' : 'text-muted hover:bg-line/50'"
                 (click)="select(i)"
-              >{{ i + 1 }}. {{ page.title || 'Untitled' }}</button>
+              >{{ i + 1 }}. {{ page.title || ('Untitled' | t) }}</button>
             </li>
           }
         </ol>
-        <button type="button" class="btn-ghost mt-2 w-full" (click)="addPage()">Add page</button>
-        <label class="label mt-6">Grading
+        <button type="button" class="btn-ghost mt-2 w-full" (click)="addPage()">{{ 'Add page' | t }}</button>
+        <label class="label mt-6">{{ 'Grading' | t }}
           <select class="input" [(ngModel)]="content().settings.grading" (ngModelChange)="changed()()">
-            <option value="completion">Completing it counts as 100%</option>
-            <option value="questions">Score from the questions</option>
+            <option value="completion">{{ 'Completing it counts as 100%' | t }}</option>
+            <option value="questions">{{ 'Score from the questions' | t }}</option>
           </select>
         </label>
         @if (content().settings.grading === 'questions') {
-          <label class="label mt-3">Pass mark (%)
+          <label class="label mt-3">{{ 'Pass mark (%)' | t }}
             <input class="input" type="number" min="0" max="100" [(ngModel)]="content().settings.passPercentage" (ngModelChange)="changed()()" />
           </label>
         }
@@ -47,18 +48,18 @@ const SNIPPETS: { label: string; text: string }[] = [
       @if (page(); as p) {
         <div class="min-w-0">
           <div class="flex flex-wrap items-center gap-2">
-            <input class="input !w-auto min-w-0 flex-1 basis-56 font-medium" aria-label="Page title" placeholder="Page title" [(ngModel)]="p.title" (ngModelChange)="changed()()" />
-            <button type="button" class="btn-quiet !px-2" aria-label="Move page up" [disabled]="index() === 0" (click)="move(-1)">↑</button>
-            <button type="button" class="btn-quiet !px-2" aria-label="Move page down" [disabled]="index() === content().pages.length - 1" (click)="move(1)">↓</button>
-            <button type="button" class="btn-quiet hover:!text-danger" [disabled]="content().pages.length === 1" (click)="removePage()">Delete page</button>
+            <input class="input !w-auto min-w-0 flex-1 basis-56 font-medium" [attr.aria-label]="'Page title' | t" [placeholder]="'Page title' | t" [(ngModel)]="p.title" (ngModelChange)="changed()()" />
+            <button type="button" class="btn-quiet !px-2" [attr.aria-label]="'Move page up' | t" [disabled]="index() === 0" (click)="move(-1)">↑</button>
+            <button type="button" class="btn-quiet !px-2" [attr.aria-label]="'Move page down' | t" [disabled]="index() === content().pages.length - 1" (click)="move(1)">↓</button>
+            <button type="button" class="btn-quiet hover:!text-danger" [disabled]="content().pages.length === 1" (click)="removePage()">{{ 'Delete page' | t }}</button>
           </div>
 
           <div class="mt-3 flex flex-wrap items-center gap-1">
             @for (s of snippets; track s.label) {
-              <button type="button" class="btn-ghost !px-2.5 !py-1 !text-xs" (click)="insert(s.text)">{{ s.label }}</button>
+              <button type="button" class="btn-ghost !px-2.5 !py-1 !text-xs" (click)="insert(translate(s.text))">{{ s.label | t }}</button>
             }
             <label class="btn-ghost !px-2.5 !py-1 !text-xs cursor-pointer">
-              Image
+              {{ 'Image' | t }}
               <input type="file" class="sr-only" accept="image/png,image/jpeg,image/gif,image/webp" (change)="pickImage($event)" />
             </label>
             @if (uploadError()) { <span class="text-xs text-danger">{{ uploadError() }}</span> }
@@ -68,7 +69,7 @@ const SNIPPETS: { label: string; text: string }[] = [
             <textarea
               #editor
               class="input min-h-[32rem] resize-y font-mono !text-[13px] leading-relaxed"
-              aria-label="Page content in Markdown"
+              [attr.aria-label]="'Page content in Markdown' | t"
               spellcheck="true"
               [(ngModel)]="p.markdown"
               (ngModelChange)="edited()"
@@ -76,7 +77,7 @@ const SNIPPETS: { label: string; text: string }[] = [
               (paste)="pasteImage($event)"
             ></textarea>
             <div class="card min-h-[32rem] min-w-0 overflow-auto p-5">
-              <p class="mb-3 text-xs font-semibold uppercase tracking-wide text-muted">Preview</p>
+              <p class="mb-3 text-xs font-semibold uppercase tracking-wide text-muted">{{ 'Preview' | t }}</p>
               <app-segments [segments]="segments()" [readonly]="true" />
             </div>
           </div>
@@ -91,6 +92,7 @@ export class ElearningEditor implements OnInit, OnDestroy {
   changed = input.required<() => void>();
   editor = viewChild<ElementRef<HTMLTextAreaElement>>('editor');
   snippets = SNIPPETS;
+  translate = t;
   index = signal(0);
   segments = signal<Segment[]>([]);
   uploadError = signal('');
@@ -125,14 +127,14 @@ export class ElearningEditor implements OnInit, OnDestroy {
 
   addPage(): void {
     const pages = this.content().pages;
-    pages.push({ id: 'p' + crypto.randomUUID().slice(0, 8), title: 'New page', markdown: '# New page\n\n' });
+    pages.push({ id: 'p' + crypto.randomUUID().slice(0, 8), title: t('New page'), markdown: `# ${t('New page')}\n\n` });
     this.select(pages.length - 1);
     this.changed()();
   }
 
   removePage(): void {
     const pages = this.content().pages;
-    if (pages.length < 2 || !confirm(`Delete page "${this.page().title}"?`)) return;
+    if (pages.length < 2 || !confirm(t('Delete page "{title}"?', { title: this.page().title }))) return;
     pages.splice(this.index(), 1);
     this.select(Math.min(this.index(), pages.length - 1));
     this.changed()();

@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace App\Types;
 
 use App\Core\HttpError;
+use App\Core\Lang;
 
 /**
  * A self-assessment: no right answers, statements are rated on a scale and the
@@ -35,11 +36,11 @@ final class ScanType extends LearningType
             'settings' => ['maxAttempts' => 0],
             'intro' => '',
             'scale' => [
-                ['value' => 1, 'label' => 'Strongly disagree'],
-                ['value' => 2, 'label' => 'Disagree'],
-                ['value' => 3, 'label' => 'Neutral'],
-                ['value' => 4, 'label' => 'Agree'],
-                ['value' => 5, 'label' => 'Strongly agree'],
+                ['value' => 1, 'label' => Lang::t('Strongly disagree')],
+                ['value' => 2, 'label' => Lang::t('Disagree')],
+                ['value' => 3, 'label' => Lang::t('Neutral')],
+                ['value' => 4, 'label' => Lang::t('Agree')],
+                ['value' => 5, 'label' => Lang::t('Strongly agree')],
             ],
             'dimensions' => [],
             'questions' => [],
@@ -52,26 +53,26 @@ final class ScanType extends LearningType
         $problems = [];
         $dimensionIds = array_column($content['dimensions'] ?? [], 'id');
         if ($dimensionIds === []) {
-            $problems[] = 'Add at least one dimension.';
+            $problems[] = Lang::t('Add at least one dimension.');
         }
         if (empty($content['questions'])) {
-            $problems[] = 'Add at least one statement.';
+            $problems[] = Lang::t('Add at least one statement.');
         }
         if (count($content['scale'] ?? []) < 2) {
-            $problems[] = 'The rating scale needs at least two steps.';
+            $problems[] = Lang::t('The rating scale needs at least two steps.');
         }
         foreach ($content['questions'] ?? [] as $index => $question) {
-            $label = 'Statement ' . ($index + 1);
+            $label = Lang::t('Statement {n}', ['n' => $index + 1]);
             if (trim((string) ($question['text'] ?? '')) === '') {
-                $problems[] = "$label has no text.";
+                $problems[] = Lang::t('{label} has no text.', ['label' => $label]);
             }
             if (!in_array($question['dimensionId'] ?? '', $dimensionIds, true)) {
-                $problems[] = "$label is not linked to a dimension.";
+                $problems[] = Lang::t('{label} is not linked to a dimension.', ['label' => $label]);
             }
         }
         foreach ($dimensionIds as $id) {
             if (!in_array($id, array_column($content['questions'] ?? [], 'dimensionId'), true)) {
-                $problems[] = 'Every dimension needs at least one statement.';
+                $problems[] = Lang::t('Every dimension needs at least one statement.');
                 break;
             }
         }

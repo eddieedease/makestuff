@@ -1,0 +1,2 @@
+ALTER TABLE users ADD COLUMN locale VARCHAR(8) NULL;
+ALTER TABLE launch_sessions ADD COLUMN locale VARCHAR(8) NULL;

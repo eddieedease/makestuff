@@ -5,6 +5,7 @@ import { firstValueFrom } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 import { HttpClient } from '@angular/common/http';
 import { User } from './models';
+import { locale, setLocale, t } from '../i18n/i18n';
 
 const STORAGE_KEY = 'makestuff.token';
 
@@ -26,7 +27,7 @@ export class Auth {
   async login(username: string, password: string): Promise<void> {
     const res = await firstValueFrom(this.http.post<{ token: string; user: User }>('api/auth/login', { username, password }));
     this.setToken(res.token);
-    this.user.set(res.user);
+    this.adopt(res.user);
   }
 
   async logout(): Promise<void> {
@@ -40,11 +41,22 @@ export class Auth {
     if (!this.token()) return false;
     try {
       const res = await firstValueFrom(this.http.get<{ user: User }>('api/auth/me'));
-      this.user.set(res.user);
+      this.adopt(res.user);
       return true;
     } catch {
       return false;
     }
+  }
+
+  /** A language saved on the account follows the author to other devices. */
+  private adopt(user: User): void {
+    this.user.set(user);
+    if (user.locale) setLocale(user.locale);
+  }
+
+  saveLocale(code: string): void {
+    if (!this.user()) return;
+    firstValueFrom(this.http.put<{ user: User }>('api/auth/me', { locale: code })).then((res) => this.user.set(res.user), () => undefined);
   }
 
   clear(): void {
@@ -68,7 +80,9 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
   const router = inject(Router);
   const token = auth.token();
   const isPlayer = req.headers.has('X-Launch-Token');
-  const request = token && !isPlayer ? req.clone({ setHeaders: { Authorization: `Bearer ${token}` } }) : req;
+  const headers: Record<string, string> = { 'Accept-Language': locale() };
+  if (token && !isPlayer) headers['Authorization'] = `Bearer ${token}`;
+  const request = req.clone({ setHeaders: headers });
   return next(request).pipe(
     catchError((error: HttpErrorResponse) => {
       if (error.status === 401 && !isPlayer && token) {
@@ -96,7 +110,7 @@ export const adminGuard: CanActivateFn = () => {
 export function errorMessage(error: unknown): string {
   if (error instanceof HttpErrorResponse) {
     if (typeof error.error?.error === 'string') return error.error.error;
-    if (error.status === 0) return 'Could not reach the server. Check your connection and try again.';
+    if (error.status === 0) return t('Could not reach the server. Check your connection and try again.');
   }
-  return 'Something went wrong. Please try again.';
+  return t('Something went wrong. Please try again.');
 }

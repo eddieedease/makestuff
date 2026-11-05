@@ -63,6 +63,7 @@ final class Auth
             'email' => $u['email'],
             'name' => $u['name'],
             'role' => $u['role'],
+            'locale' => $u['locale'] ?? null,
             'is_active' => (bool) $u['is_active'],
             'last_login_at' => $u['last_login_at'],
         ];

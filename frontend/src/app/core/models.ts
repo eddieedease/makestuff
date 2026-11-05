@@ -4,6 +4,7 @@ export interface User {
   email: string;
   name: string;
   role: 'admin' | 'user';
+  locale: string | null;
   is_active: boolean;
   last_login_at: string | null;
   object_count?: number;
@@ -96,6 +97,7 @@ export interface PlayAttempt {
 
 export interface PlaySession {
   preview: boolean;
+  locale: string | null;
   learner: { name: string | null; role: string };
   object: { type: string; title: string; description: string; content: any };
   attempt: PlayAttempt;

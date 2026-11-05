@@ -7,6 +7,7 @@ use App\Core\Auth;
 use App\Core\Config;
 use App\Core\Db;
 use App\Core\HttpError;
+use App\Core\Lang;
 use App\Core\Mailer;
 use App\Core\Request;
 use App\Core\Response;
@@ -64,7 +65,8 @@ final class AuthController
             UserController::assertPassword($password);
             Db::run('UPDATE users SET password_hash = ? WHERE id = ?', [password_hash($password, PASSWORD_DEFAULT), $user['id']]);
         }
-        Db::run('UPDATE users SET name = ?, email = ? WHERE id = ?', [$name, $email, $user['id']]);
+        $locale = $r->input('locale') === null ? $user['locale'] : Lang::normalize($r->str('locale'));
+        Db::run('UPDATE users SET name = ?, email = ?, locale = ? WHERE id = ?', [$name, $email, $locale, $user['id']]);
         Response::json(['user' => Auth::publicUser(Db::one('SELECT * FROM users WHERE id = ?', [$user['id']]))]);
     }
 
@@ -84,9 +86,10 @@ final class AuthController
                 hash('sha256', $token), $user['id'], Db::now(3600),
             ]);
             $link = Url::frontend() . '/reset-password/' . $token;
+            Lang::set($user['locale']);
             try {
-                Mailer::send(Config::get('mail', []), $user['email'], 'Reset your password',
-                    "Hi {$user['name']},\n\nOpen this link within an hour to choose a new password:\n\n$link\n\nDidn't ask for this? You can ignore this email.\n");
+                Mailer::send(Config::get('mail', []), $user['email'], Lang::t('Reset your password'),
+                    Lang::t("Hi {name},\n\nOpen this link within an hour to choose a new password:\n\n{link}\n\nDidn't ask for this? You can ignore this email.\n", ['name' => $user['name'], 'link' => $link]));
             } catch (\Throwable $e) {
                 error_log('[makestuff] password reset mail failed: ' . $e->getMessage());
             }

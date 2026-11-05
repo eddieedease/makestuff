@@ -102,6 +102,7 @@ if ($path === '/launch11') {
     $url = TOOL_BROWSER . '/lti/1.1/launch/' . $object;
     $params = [
         'lti_message_type' => 'basic-lti-launch-request', 'lti_version' => 'LTI-1p0',
+        'launch_presentation_locale' => $_GET['locale'] ?? 'en-GB',
         'resource_link_id' => "mock-$object", 'user_id' => $user, 'roles' => $role,
         'lis_person_name_full' => $role === 'Learner' ? 'Sam Student' : 'Tess Teacher',
         'lis_person_contact_email_primary' => 'sam@example.test', 'context_id' => 'c1', 'context_title' => 'Mock course',
@@ -116,7 +117,7 @@ if ($path === '/launch11') {
 
 // LTI 1.3 step 1: third-party initiated login.
 if ($path === '/launch13') {
-    $hint = b64u(json_encode(['object' => $_GET['object'] ?? 'demo-quiz', 'role' => $_GET['role'] ?? 'Learner', 'deep' => isset($_GET['deep']), 'user' => $_GET['user'] ?? 'student-1']));
+    $hint = b64u(json_encode(['object' => $_GET['object'] ?? 'demo-quiz', 'role' => $_GET['role'] ?? 'Learner', 'locale' => $_GET['locale'] ?? 'en-GB', 'deep' => isset($_GET['deep']), 'user' => $_GET['user'] ?? 'student-1']));
     header('Location: ' . TOOL_BROWSER . '/lti/1.3/login?' . http_build_query([
         'iss' => ISSUER, 'login_hint' => 'mock-user', 'client_id' => CLIENT_ID, 'lti_deployment_id' => '1',
         'target_link_uri' => TOOL_BROWSER . '/lti/1.3/launch?object=' . ($_GET['object'] ?? 'demo-quiz'), 'lti_message_hint' => $hint,
@@ -138,6 +139,7 @@ if ($path === '/auth') {
         CLAIM . 'version' => '1.3.0', CLAIM . 'deployment_id' => '1',
         CLAIM . 'roles' => ["http://purl.imsglobal.org/vocab/lis/v2/membership#$role"],
         CLAIM . 'context' => ['id' => 'c1', 'title' => 'Mock course'],
+        CLAIM . 'launch_presentation' => ['locale' => $hint['locale'] ?? 'en-GB'],
     ];
     if (!empty($hint['deep'])) {
         $claims[CLAIM . 'message_type'] = 'LtiDeepLinkingRequest';
@@ -235,6 +237,7 @@ pre{font-size:.72rem;white-space:pre-wrap;background:#f4f6f8;padding:.5rem;borde
 <div class="wrap"><aside>
 <label>Activity<select id="object"><?= $options ?></select></label>
 <label>Launch as<select id="role"><option>Learner</option><option>Instructor</option></select></label>
+<label>LMS language<select id="locale"><option value="en-GB">English</option><option value="nl-NL">Nederlands</option></select></label>
 <label>Learner id<select id="user"><option>student-1</option><option>student-2</option></select></label>
 <button onclick="go('/launch11')">Launch with LTI 1.1</button>
 <button onclick="go('/launch13')">Launch with LTI 1.3</button>
@@ -243,7 +246,7 @@ pre{font-size:.72rem;white-space:pre-wrap;background:#f4f6f8;padding:.5rem;borde
 </aside><iframe id="frame" name="frame" title="Tool"></iframe></div>
 <script>
 const v=i=>document.getElementById(i).value;
-const q=()=>`object=${v('object')}&role=${v('role')}&user=${v('user')}`;
+const q=()=>`object=${v('object')}&role=${v('role')}&user=${v('user')}&locale=${v('locale')}`;
 function go(p){document.getElementById('frame').src=p+'?'+q()}
 function deep(){document.getElementById('frame').src='/launch13?deep=1&role=Instructor'}
 async function poll(){document.getElementById('log').textContent=(await (await fetch('/log.json')).json()).map(e=>JSON.stringify(e)).join('\n')||'No grades yet'}

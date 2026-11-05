@@ -6,6 +6,7 @@ namespace App\Controllers;
 use App\Core\Auth;
 use App\Core\Db;
 use App\Core\HttpError;
+use App\Core\Lang;
 use App\Core\Request;
 use App\Core\Response;
 use App\Core\Url;
@@ -47,14 +48,6 @@ final class ObjectController
             $data['content'] = json_decode($o['content'], true);
         }
         return $data;
-    }
-
-    public function types(Request $r): void
-    {
-        Auth::require($r);
-        Response::json(['types' => array_map(static function ($t): array {
-            return ['key' => $t->key(), 'label' => $t->label(), 'description' => $t->description()];
-        }, Registry::all())]);
     }
 
     /** The editor's live preview uses the same parser as the player. */
@@ -166,7 +159,7 @@ final class ObjectController
     {
         $user = Auth::require($r);
         $object = $this->find($r, $user);
-        $id = self::insert($user['id'], $object['type'], 'Copy of ' . $object['title'], (string) $object['description'], json_decode($object['content'], true));
+        $id = self::insert($user['id'], $object['type'], Lang::t('Copy of {title}', ['title' => $object['title']]), (string) $object['description'], json_decode($object['content'], true));
         $r->params['id'] = $id;
         Response::json(['object' => $this->present($this->find($r, $user), true)], 201);
     }
@@ -184,6 +177,7 @@ final class ObjectController
             'learner_name' => $user['name'],
             'role' => 'instructor',
             'resource_link_id' => 'preview',
+            'locale' => $user['locale'] ?? Lang::get(),
         ]);
         Response::json(['token' => $token]);
     }

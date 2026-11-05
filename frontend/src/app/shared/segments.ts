@@ -2,8 +2,10 @@ import { Component, input, output, signal } from '@angular/core';
 import { Question, QuestionReview, Segment } from '../core/models';
 import { MarkdownPipe } from './markdown';
 import { QuestionCard } from './question-card';
+import { TPipe } from '../i18n/i18n';
 
 @Component({
+  imports: [TPipe],
   selector: 'app-flipcards',
   template: `
     <div class="my-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
@@ -19,7 +21,7 @@ import { QuestionCard } from './question-card';
             {{ card.back }}
           } @else {
             <span class="font-display text-lg font-semibold">{{ card.front }}</span>
-            <span class="mt-2 block text-xs text-muted">Select to flip</span>
+            <span class="mt-2 block text-xs text-muted">{{ 'Select to flip' | t }}</span>
           }
         </button>
       }
@@ -40,7 +42,7 @@ export class Flipcards {
 /** Renders e-learning segments. To add an interactive element, add a case here and in Directives.php. */
 @Component({
   selector: 'app-segments',
-  imports: [MarkdownPipe, QuestionCard, Flipcards],
+  imports: [MarkdownPipe, QuestionCard, Flipcards, TPipe],
   template: `
     @for (segment of segments(); track $index) {
       @switch (segment.kind) {
@@ -71,7 +73,7 @@ export class Flipcards {
               (answered)="answered.emit({ id: segment.question.id, answer: $event })"
             />
             @if (!readonly() && !reviews()[segment.question.id]) {
-              <button type="button" class="btn-ghost mt-3" [disabled]="!hasAnswer(segment.question)" (click)="check.emit(segment.question.id)">Check answer</button>
+              <button type="button" class="btn-ghost mt-3" [disabled]="!hasAnswer(segment.question)" (click)="check.emit(segment.question.id)">{{ 'Check answer' | t }}</button>
             }
           </div>
         }

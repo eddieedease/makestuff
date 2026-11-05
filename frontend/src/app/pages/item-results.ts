@@ -1,40 +1,40 @@
-import { DatePipe, DecimalPipe } from '@angular/common';
 import { Component, computed, inject, input, OnInit, signal } from '@angular/core';
 import { Api } from '../core/api';
+import { LocalDatePipe, NumPipe, TPipe } from '../i18n/i18n';
 import { Attempt } from '../core/models';
 
 @Component({
   selector: 'app-results-panel',
-  imports: [DatePipe, DecimalPipe],
+  imports: [LocalDatePipe, NumPipe, TPipe],
   template: `
     @if (!loading() && !attempts().length) {
-      <p class="text-sm text-muted">No results yet. Learners appear here after they open this item from an LMS. Previews are not recorded.</p>
+      <p class="text-sm text-muted">{{ 'No results yet. Learners appear here after they open this item from an LMS. Previews are not recorded.' | t }}</p>
     } @else if (attempts().length) {
       <dl class="mb-4 grid max-w-xl grid-cols-3 gap-3">
-        <div class="card p-3"><dt class="text-xs text-muted">Started</dt><dd class="font-display text-2xl font-semibold">{{ attempts().length }}</dd></div>
-        <div class="card p-3"><dt class="text-xs text-muted">Completed</dt><dd class="font-display text-2xl font-semibold">{{ completed().length }}</dd></div>
-        <div class="card p-3"><dt class="text-xs text-muted">Average score</dt><dd class="font-display text-2xl font-semibold">{{ average() === null ? '–' : (average()! * 100 | number: '1.0-0') + '%' }}</dd></div>
+        <div class="card p-3"><dt class="text-xs text-muted">{{ 'Started' | t }}</dt><dd class="font-display text-2xl font-semibold">{{ attempts().length }}</dd></div>
+        <div class="card p-3"><dt class="text-xs text-muted">{{ 'Completed' | t }}</dt><dd class="font-display text-2xl font-semibold">{{ completed().length }}</dd></div>
+        <div class="card p-3"><dt class="text-xs text-muted">{{ 'Average score' | t }}</dt><dd class="font-display text-2xl font-semibold">{{ average() === null ? '–' : (average()! * 100 | num) + '%' }}</dd></div>
       </dl>
       <div class="card overflow-x-auto">
         <table class="w-full text-left text-sm">
           <thead class="border-b border-line text-xs text-muted">
-            <tr><th class="px-4 py-2 font-medium">Learner</th><th class="px-4 py-2 font-medium">Course</th><th class="px-4 py-2 font-medium">Status</th><th class="px-4 py-2 font-medium">Score</th><th class="px-4 py-2 font-medium">Sent to LMS</th><th class="px-4 py-2 font-medium">Started</th></tr>
+            <tr><th class="px-4 py-2 font-medium">{{ 'Learner' | t }}</th><th class="px-4 py-2 font-medium">{{ 'Course' | t }}</th><th class="px-4 py-2 font-medium">{{ 'Status' | t }}</th><th class="px-4 py-2 font-medium">{{ 'Score' | t }}</th><th class="px-4 py-2 font-medium">{{ 'Sent to LMS' | t }}</th><th class="px-4 py-2 font-medium">{{ 'Started' | t }}</th></tr>
           </thead>
           <tbody class="divide-y divide-line">
             @for (a of attempts(); track a.id) {
               <tr>
                 <td class="px-4 py-2">{{ a.learner }}</td>
                 <td class="px-4 py-2 text-muted">{{ a.course ?? '–' }}<span class="block text-xs">{{ a.lms }}</span></td>
-                <td class="px-4 py-2">{{ a.status === 'completed' ? 'Completed' : 'In progress (' + (a.progress * 100 | number: '1.0-0') + '%)' }}</td>
-                <td class="px-4 py-2 tabular-nums">{{ a.score === null ? '–' : (a.score * 100 | number: '1.0-0') + '%' }}</td>
+                <td class="px-4 py-2">{{ a.status === 'completed' ? ('Completed' | t) : ('In progress ({percent}%)' | t: { percent: a.progress * 100 | num }) }}</td>
+                <td class="px-4 py-2 tabular-nums">{{ a.score === null ? '–' : (a.score * 100 | num) + '%' }}</td>
                 <td class="px-4 py-2">
                   @switch (a.passback_status) {
-                    @case ('sent') { <span class="text-accent">Sent</span> }
-                    @case ('failed') { <span class="text-danger" [title]="a.passback_error ?? ''">Failed</span> }
+                    @case ('sent') { <span class="text-accent">{{ 'Sent' | t }}</span> }
+                    @case ('failed') { <span class="text-danger" [title]="a.passback_error ?? ''">{{ 'Failed' | t }}</span> }
                     @default { <span class="text-muted">–</span> }
                   }
                 </td>
-                <td class="px-4 py-2 whitespace-nowrap text-muted">{{ a.started_at + 'Z' | date: 'd MMM y, HH:mm' }}</td>
+                <td class="px-4 py-2 whitespace-nowrap text-muted">{{ a.started_at | localDate: 'd MMM y, HH:mm' }}</td>
               </tr>
             }
           </tbody>

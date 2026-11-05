@@ -3,6 +3,8 @@ declare(strict_types=1);
 
 namespace App\Types;
 
+use App\Core\Lang;
+
 /**
  * Turns e-learning Markdown into a list of segments the player renders.
  * Plain Markdown stays Markdown; a ":::name" block becomes an interactive
@@ -53,7 +55,7 @@ final class Directives
             $name = strtolower($m[1]);
             $segments[] = $closed
                 ? self::parseBlock($name, trim($m[2]), $body)
-                : ['kind' => 'error', 'message' => ":::$name is missing its closing :::"];
+                : ['kind' => 'error', 'message' => Lang::t(':::{name} is missing its closing :::', ['name' => $name])];
         }
         self::flush($segments, $text);
         return self::giveQuestionsIds($segments);
@@ -98,7 +100,7 @@ final class Directives
             case 'question':
                 return ['kind' => 'question', 'question' => self::parseQuestion($argument, $body)];
             case 'reveal':
-                return ['kind' => 'reveal', 'title' => $argument !== '' ? $argument : 'Show more', 'text' => $text];
+                return ['kind' => 'reveal', 'title' => $argument !== '' ? $argument : Lang::t('Show more'), 'text' => $text];
             case 'callout':
                 $variant = in_array($argument, ['info', 'tip', 'warning'], true) ? $argument : 'info';
                 return ['kind' => 'callout', 'variant' => $variant, 'text' => $text];
@@ -112,7 +114,7 @@ final class Directives
                 }
                 return ['kind' => 'flipcards', 'cards' => $cards];
         }
-        return ['kind' => 'error', 'message' => "Unknown element :::$name. Available: " . implode(', ', self::KNOWN)];
+        return ['kind' => 'error', 'message' => Lang::t('Unknown element :::{name}. Available: {list}', ['name' => $name, 'list' => implode(', ', self::KNOWN)])];
     }
 
     private static function parseQuestion(string $argument, array $body): array

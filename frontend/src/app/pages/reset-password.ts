@@ -4,24 +4,25 @@ import { RouterLink } from '@angular/router';
 import { Api } from '../core/api';
 import { errorMessage } from '../core/auth';
 import { AuthLayout } from './auth-layout';
+import { TPipe } from '../i18n/i18n';
 
 @Component({
-  imports: [FormsModule, RouterLink, AuthLayout],
+  imports: [FormsModule, RouterLink, AuthLayout, TPipe],
   template: `
-    <app-auth-layout heading="Choose a new password">
+    <app-auth-layout [heading]="'Choose a new password' | t">
       @if (done()) {
-        <p class="alert-ok">Your password has been changed.</p>
-        <a class="btn-primary mt-4 w-full" routerLink="/login">Sign in</a>
+        <p class="alert-ok">{{ 'Your password has been changed.' | t }}</p>
+        <a class="btn-primary mt-4 w-full" routerLink="/login">{{ 'Sign in' | t }}</a>
       } @else {
         <form class="space-y-4" (ngSubmit)="submit()">
           @if (error()) {
             <p class="alert-error" role="alert">{{ error() }}</p>
           }
-          <label class="label">New password
+          <label class="label">{{ 'New password' | t }}
             <input class="input" name="password" type="password" autocomplete="new-password" minlength="8" required [(ngModel)]="password" />
-            <span class="hint">At least 8 characters.</span>
+            <span class="hint">{{ 'At least 8 characters.' | t }}</span>
           </label>
-          <button class="btn-primary w-full">Change password</button>
+          <button class="btn-primary w-full">{{ 'Change password' | t }}</button>
         </form>
       }
     </app-auth-layout>

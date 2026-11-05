@@ -1,5 +1,6 @@
 import { Component, computed, effect, inject, signal, untracked } from '@angular/core';
 import { errorMessage } from '../core/auth';
+import { NumPipe, TPipe, t } from '../i18n/i18n';
 import { Question, QuestionReview } from '../core/models';
 import { QuestionCard } from '../shared/question-card';
 import { PlayStore } from './play-store';
@@ -15,17 +16,17 @@ function shuffled<T>(items: T[]): T[] {
 }
 
 @Component({
-  imports: [QuestionCard, ResultFooter],
+  imports: [QuestionCard, ResultFooter, TPipe, NumPipe],
   template: `
     @if (result(); as r) {
       <section class="card p-6">
-        <p class="font-display text-5xl font-semibold tabular-nums">{{ r.detail.percentage }}%</p>
-        <p class="mt-1 font-semibold" [class]="r.passed ? 'text-accent' : 'text-danger'">{{ r.passed ? 'You passed' : 'Not passed yet' }}</p>
-        <p class="text-sm text-muted">The pass mark is {{ settings().passPercentage }}%.</p>
+        <p class="font-display text-5xl font-semibold tabular-nums">{{ r.detail.percentage | num }}%</p>
+        <p class="mt-1 font-semibold" [class]="r.passed ? 'text-accent' : 'text-danger'">{{ (r.passed ? 'You passed' : 'Not passed yet') | t }}</p>
+        <p class="text-sm text-muted">{{ 'The pass mark is {percent}%.' | t: { percent: settings().passPercentage } }}</p>
         <app-result-footer />
       </section>
       @if (r.detail.review) {
-        <h2 class="mt-8 text-xl font-semibold">Your answers</h2>
+        <h2 class="mt-8 text-xl font-semibold">{{ 'Your answers' | t }}</h2>
         <div class="mt-3 space-y-3">
           @for (q of allQuestions(); track q.id) {
             <section class="card p-5">
@@ -35,23 +36,23 @@ function shuffled<T>(items: T[]): T[] {
         </div>
       }
     } @else if (question(); as q) {
-      <p class="text-sm text-muted">Question {{ index() + 1 }} of {{ order().length }}</p>
+      <p class="text-sm text-muted">{{ 'Question {n} of {total}' | t: { n: index() + 1, total: order().length } }}</p>
       <div class="mt-2 h-1.5 overflow-hidden rounded-full bg-line">
         <div class="h-full bg-accent transition-all" [style.width.%]="((index() + 1) / order().length) * 100"></div>
       </div>
       <section class="card mt-4 p-5 sm:p-6">
         <app-question-card [question]="q" [answer]="answers()[q.id]" [review]="reviews()[q.id]" [locked]="!!reviews()[q.id]" (answered)="setAnswer(q.id, $event)" />
         @if (settings().immediateFeedback && !reviews()[q.id]) {
-          <button type="button" class="btn-ghost mt-3" [disabled]="!answered(q.id)" (click)="check(q.id)">Check answer</button>
+          <button type="button" class="btn-ghost mt-3" [disabled]="!answered(q.id)" (click)="check(q.id)">{{ 'Check answer' | t }}</button>
         }
       </section>
       @if (error()) { <p class="alert-error mt-3" role="alert">{{ error() }}</p> }
       <div class="mt-4 flex justify-between">
-        <button type="button" class="btn-ghost" [disabled]="index() === 0" (click)="go(index() - 1)">Previous</button>
+        <button type="button" class="btn-ghost" [disabled]="index() === 0" (click)="go(index() - 1)">{{ 'Previous' | t }}</button>
         @if (index() < order().length - 1) {
-          <button type="button" class="btn-primary" (click)="go(index() + 1)">Next</button>
+          <button type="button" class="btn-primary" (click)="go(index() + 1)">{{ 'Next' | t }}</button>
         } @else {
-          <button type="button" class="btn-primary" [disabled]="busy()" (click)="submit()">Submit</button>
+          <button type="button" class="btn-primary" [disabled]="busy()" (click)="submit()">{{ 'Submit' | t }}</button>
         }
       </div>
     }
@@ -128,7 +129,7 @@ export class QuizPlayer {
 
   async submit(): Promise<void> {
     const open = this.order().filter((id) => !this.answered(id)).length;
-    if (open && !confirm(`You have ${open} unanswered question(s). Submit anyway?`)) return;
+    if (open && !confirm(t('You have {count} unanswered question(s). Submit anyway?', { count: open }))) return;
     this.busy.set(true);
     this.error.set('');
     try {

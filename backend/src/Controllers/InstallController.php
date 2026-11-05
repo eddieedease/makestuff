@@ -5,6 +5,7 @@ namespace App\Controllers;
 
 use App\Core\Config;
 use App\Core\Db;
+use App\Core\Lang;
 use App\Core\Mailer;
 use App\Core\Migrator;
 use App\Core\Request;
@@ -26,8 +27,12 @@ final class InstallController
         session_set_cookie_params(['httponly' => true, 'samesite' => 'Lax', 'path' => $r->basePath . '/install']);
         session_start();
 
+        // A choice made here wins over the browser's language.
+        $_SESSION['lang'] = Lang::normalize($r->query['lang'] ?? null) ?? ($_SESSION['lang'] ?? Lang::get());
+        Lang::set($_SESSION['lang']);
+
         if (Config::installed() && empty($_SESSION['just_finished'])) {
-            Response::errorPage('Already installed', 'This site is set up. To reinstall, remove config/config.php first.', 403);
+            Response::errorPage(Lang::t('Already installed'), Lang::t('This site is set up. To reinstall, remove config/config.php first.'), 403);
             return;
         }
         $_SESSION['csrf'] ??= bin2hex(random_bytes(16));
@@ -44,7 +49,7 @@ final class InstallController
 
         if ($r->method === 'POST') {
             if (!hash_equals($_SESSION['csrf'], (string) ($r->post['csrf'] ?? ''))) {
-                $error = 'Your session expired. Please try again.';
+                $error = Lang::t('Your session expired. Please try again.');
             } else {
                 try {
                     if ($step === 2) {
@@ -55,8 +60,8 @@ final class InstallController
                     if ($step === 3) {
                         $this->saveSite($r);
                         if (isset($r->post['test_mail'])) {
-                            Mailer::send($_SESSION['data']['mail'], $_SESSION['data']['mail']['from_email'], 'Makestuff test email', "Your email settings work.\n");
-                            $notice = 'Test email sent to ' . $_SESSION['data']['mail']['from_email'] . '. Check your inbox.';
+                            Mailer::send($_SESSION['data']['mail'], $_SESSION['data']['mail']['from_email'], Lang::t('Makestuff test email'), Lang::t('Your email settings work.') . "\n");
+                            $notice = Lang::t('Test email sent to {email}. Check your inbox.', ['email' => $_SESSION['data']['mail']['from_email']]);
                         } else {
                             Response::redirect($r->basePath . '/install?step=4');
                             return;
@@ -69,7 +74,7 @@ final class InstallController
                         return;
                     }
                 } catch (\Throwable $e) {
-                    $error = $e->getMessage();
+                    $error = Lang::t($e->getMessage());
                 }
             }
         }
@@ -105,7 +110,7 @@ final class InstallController
             $pdo = Db::connect($db);
         } catch (\PDOException $e) {
             unset($_SESSION['data']['db_ok']);
-            throw new \RuntimeException('Could not connect: ' . $e->getMessage());
+            throw new \RuntimeException(Lang::t('Could not connect: {error}', ['error' => $e->getMessage()]));
         }
         if ($pdo->query("SHOW TABLES LIKE 'users'")->fetchColumn() !== false) {
             throw new \RuntimeException('This database already contains a users table. Use an empty database.');
@@ -195,14 +200,14 @@ final class InstallController
     private function checks(): array
     {
         return [
-            ['PHP 8.0 or newer (found ' . PHP_VERSION . ')', PHP_VERSION_ID >= 80000],
-            ['PDO MySQL extension', extension_loaded('pdo_mysql')],
-            ['OpenSSL extension (LTI 1.3 signing)', extension_loaded('openssl')],
-            ['cURL extension (grade passback)', extension_loaded('curl')],
-            ['mbstring extension', extension_loaded('mbstring')],
-            ['fileinfo extension (image uploads)', extension_loaded('fileinfo')],
-            ['config/ is writable', is_writable(APP_ROOT . '/config')],
-            ['storage/uploads/ is writable', is_writable(APP_ROOT . '/storage/uploads')],
+            [Lang::t('PHP 8.0 or newer (found {version})', ['version' => PHP_VERSION]), PHP_VERSION_ID >= 80000],
+            [Lang::t('PDO MySQL extension'), extension_loaded('pdo_mysql')],
+            [Lang::t('OpenSSL extension (LTI 1.3 signing)'), extension_loaded('openssl')],
+            [Lang::t('cURL extension (grade passback)'), extension_loaded('curl')],
+            [Lang::t('mbstring extension'), extension_loaded('mbstring')],
+            [Lang::t('fileinfo extension (image uploads)'), extension_loaded('fileinfo')],
+            [Lang::t('config/ is writable'), is_writable(APP_ROOT . '/config')],
+            [Lang::t('storage/uploads/ is writable'), is_writable(APP_ROOT . '/storage/uploads')],
         ];
     }
 
@@ -213,22 +218,22 @@ final class InstallController
             $rows .= '<li class="' . ($passed ? 'pass' : 'fail') . '">' . ($passed ? '✓' : '✕') . ' ' . Response::e($label) . '</li>';
         }
         $next = $this->requirementsMet()
-            ? '<a class="btn" href="' . Response::e($r->basePath) . '/install?step=2">Continue</a>'
-            : '<p class="err">Fix the items marked ✕ and reload this page. On shared hosting these are usually PHP settings in your control panel, or folder permissions (try 755 or 775).</p>';
-        return "<h2>Check your server</h2><ul class=\"checks\">$rows</ul>$next";
+            ? '<a class="btn" href="' . Response::e($r->basePath) . '/install?step=2">' . Lang::t('Continue') . '</a>'
+            : '<p class="err">' . Lang::t('Fix the items marked ✕ and reload this page. On shared hosting these are usually PHP settings in your control panel, or folder permissions (try 755 or 775).') . '</p>';
+        return '<h2>' . Lang::t('Check your server') . "</h2><ul class=\"checks\">$rows</ul>$next";
     }
 
     private function databaseForm(Request $r): string
     {
         $d = $_SESSION['data']['db'] ?? ['host' => 'localhost', 'port' => 3306, 'name' => '', 'user' => '', 'pass' => ''];
-        return '<h2>Database</h2><p>Create an empty MySQL or MariaDB database in your hosting control panel, then fill in its details.</p>'
+        return '<h2>' . Lang::t('Database') . '</h2><p>' . Lang::t('Create an empty MySQL or MariaDB database in your hosting control panel, then fill in its details.') . '</p>'
             . $this->form(
                 $this->field('Host', 'host', $d['host'])
                 . $this->field('Port', 'port', (string) $d['port'], 'number')
                 . $this->field('Database name', 'name', $d['name'])
                 . $this->field('Username', 'user', $d['user'])
                 . $this->field('Password', 'pass', '', 'password', false),
-                '<button>Test and continue</button>'
+                '<button>' . Lang::t('Test and continue') . '</button>'
             );
     }
 
@@ -237,44 +242,44 @@ final class InstallController
         $d = $_SESSION['data'];
         $m = $d['mail'] ?? ['host' => '', 'port' => 587, 'encryption' => 'tls', 'user' => '', 'pass' => '', 'from_email' => '', 'from_name' => 'Makestuff'];
         $options = '';
-        foreach (['tls' => 'STARTTLS', 'ssl' => 'SSL/TLS', '' => 'None'] as $value => $label) {
+        foreach (['tls' => 'STARTTLS', 'ssl' => 'SSL/TLS', '' => Lang::t('None')] as $value => $label) {
             $options .= '<option value="' . $value . '"' . ($m['encryption'] === $value ? ' selected' : '') . ">$label</option>";
         }
-        return '<h2>Site and email</h2>'
+        return '<h2>' . Lang::t('Site and email') . '</h2>'
             . $this->form(
                 $this->field('Site name', 'site_name', $d['site_name'] ?? 'Makestuff')
                 . $this->field('Site address', 'app_url', $d['app_url'] ?? Url::detect(), 'url', true, 'LMSs use this address. Use https in production: browsers block mixed content inside an LMS.')
-                . '<h3>Email</h3><p>Used for password resets. Leave the mail server empty to use PHP\'s own mail function.</p>'
+                . '<h3>' . Lang::t('Email') . '</h3><p>' . Lang::t("Used for password resets. Leave the mail server empty to use PHP's own mail function.") . '</p>'
                 . $this->field('Sender email', 'from_email', $m['from_email'], 'email')
                 . $this->field('Sender name', 'from_name', $m['from_name'])
                 . $this->field('Mail server (SMTP)', 'mail_host', $m['host'], 'text', false)
                 . $this->field('Port', 'mail_port', (string) $m['port'], 'number', false)
-                . '<label>Encryption<select name="mail_encryption">' . $options . '</select></label>'
+                . '<label>' . Lang::t('Encryption') . '<select name="mail_encryption">' . $options . '</select></label>'
                 . $this->field('SMTP username', 'mail_user', $m['user'], 'text', false)
                 . $this->field('SMTP password', 'mail_pass', $m['pass'], 'password', false),
-                '<button>Continue</button> <button class="ghost" name="test_mail" value="1">Send test email</button>'
+                '<button>' . Lang::t('Continue') . '</button> <button class="ghost" name="test_mail" value="1">' . Lang::t('Send test email') . '</button>'
             );
     }
 
     private function adminForm(Request $r): string
     {
         $a = $_SESSION['data']['admin'] ?? ['name' => '', 'username' => '', 'email' => ''];
-        return '<h2>First administrator</h2>'
+        return '<h2>' . Lang::t('First administrator') . '</h2>'
             . $this->form(
                 $this->field('Full name', 'name', $a['name'])
                 . $this->field('Username', 'username', $a['username'])
                 . $this->field('Email', 'email', $a['email'], 'email')
                 . $this->field('Password', 'password', '', 'password', true, 'At least 8 characters.')
                 . $this->field('Repeat password', 'password2', '', 'password'),
-                '<button>Install</button>'
+                '<button>' . Lang::t('Install') . '</button>'
             );
     }
 
     private function done(Request $r): string
     {
         $url = (string) ($_SESSION['data']['finished_url'] ?? Url::base());
-        return '<h2>All set</h2><p>Makestuff is installed. The installer has locked itself.</p>'
-            . '<a class="btn" href="' . Response::e($url) . '/login">Go to sign in</a>';
+        return '<h2>' . Lang::t('All set') . '</h2><p>' . Lang::t('Makestuff is installed. The installer has locked itself.') . '</p>'
+            . '<a class="btn" href="' . Response::e($url) . '/login">' . Lang::t('Go to sign in') . '</a>';
     }
 
     private function form(string $fields, string $actions): string
@@ -285,9 +290,9 @@ final class InstallController
 
     private function field(string $label, string $name, string $value, string $type = 'text', bool $required = true, string $hint = ''): string
     {
-        return '<label>' . Response::e($label)
+        return '<label>' . Response::e(Lang::t($label))
             . '<input type="' . $type . '" name="' . $name . '" value="' . Response::e($value) . '"' . ($required ? ' required' : '') . '>'
-            . ($hint !== '' ? '<small>' . Response::e($hint) . '</small>' : '') . '</label>';
+            . ($hint !== '' ? '<small>' . Response::e(Lang::t($hint)) . '</small>' : '') . '</label>';
     }
 
     private function layout(int $step, string $body, ?string $error, ?string $notice): string
@@ -295,13 +300,16 @@ final class InstallController
         $steps = '';
         foreach (self::STEPS as $index => $label) {
             $class = $index + 1 === $step ? 'now' : ($index + 1 < $step ? 'past' : '');
-            $steps .= '<li class="' . $class . '">' . $label . '</li>';
+            $steps .= '<li class="' . $class . '">' . Lang::t($label) . '</li>';
         }
         $alert = ($error !== null ? '<p class="err">' . Response::e($error) . '</p>' : '')
             . ($notice !== null ? '<p class="ok">' . Response::e($notice) . '</p>' : '');
+        $lang = Lang::get();
+        $title = Lang::t('Install Makestuff');
+        $switch = '<a href="?step=' . $step . '&amp;lang=' . ($lang === 'nl' ? 'en">English' : 'nl">Nederlands') . '</a>';
         return <<<HTML
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Install Makestuff</title><style>
+<!doctype html><html lang="{$lang}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>{$title}</title><style>
 *{box-sizing:border-box}body{margin:0;background:#f5f2ec;color:#1f1b16;font:16px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif}
 main{max-width:34rem;margin:0 auto;padding:2.5rem 1rem}h1{font-size:1.5rem;margin:0 0 1.25rem}h2{font-size:1.2rem;margin:0 0 .75rem}h3{font-size:1rem;margin:1.5rem 0 .25rem}
 ol{list-style:none;display:flex;flex-wrap:wrap;gap:.25rem 1rem;padding:0;margin:0 0 1.25rem;font-size:.85rem;color:#8a8175}li.now{color:#1f1b16;font-weight:600}li.past{color:#2e6b4f}
@@ -311,7 +319,8 @@ small{display:block;font-weight:400;color:#6e665b;margin-top:.25rem}.actions{mar
 button,.btn{display:inline-block;background:#1f1b16;color:#fff;border:0;border-radius:.5rem;padding:.6rem 1.1rem;font:inherit;font-weight:600;text-decoration:none;cursor:pointer}
 .ghost{background:transparent;color:#1f1b16;box-shadow:inset 0 0 0 1px #cfc7b9}.err{background:#fbe9e5;color:#8c2a17;padding:.6rem .8rem;border-radius:.5rem}.ok{background:#e4f2ea;color:#1e5a3f;padding:.6rem .8rem;border-radius:.5rem}
 .checks{list-style:none;padding:0;margin:0 0 1.25rem}.checks li{padding:.2rem 0}.pass{color:#2e6b4f}.fail{color:#8c2a17;font-weight:600}
-</style></head><body><main><h1>Install Makestuff</h1><ol>{$steps}</ol><div class="card">{$alert}{$body}</div></main></body></html>
+.lang{float:right;margin:0;font-size:.85rem}.lang a{color:inherit}
+</style></head><body><main><p class="lang">{$switch}</p><h1>{$title}</h1><ol>{$steps}</ol><div class="card">{$alert}{$body}</div></main></body></html>
 HTML;
     }
 }
