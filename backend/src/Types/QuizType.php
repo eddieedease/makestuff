@@ -6,7 +6,11 @@ namespace App\Types;
 use App\Core\HttpError;
 use App\Core\Lang;
 
-/** { settings: {passPercentage, shuffleQuestions, immediateFeedback, showAnswers, maxAttempts}, questions: [...] } */
+/**
+ * { settings: {passPercentage, shuffleQuestions, immediateFeedback, showAnswers, maxAttempts},
+ *   categories: [{id, name}], questions: [{..., categoryId}] }
+ * With categories, the result also breaks the score down per category.
+ */
 final class QuizType extends LearningType
 {
     public function key(): string
@@ -34,6 +38,7 @@ final class QuizType extends LearningType
                 'showAnswers' => true,
                 'maxAttempts' => 0,
             ],
+            'categories' => [],
             'questions' => [],
         ];
     }
@@ -42,8 +47,21 @@ final class QuizType extends LearningType
     {
         $questions = $content['questions'] ?? [];
         $problems = $questions === [] ? [Lang::t('Add at least one question.')] : [];
+        $categoryIds = array_column($content['categories'] ?? [], 'id');
+        foreach ($content['categories'] ?? [] as $index => $category) {
+            if (trim((string) ($category['name'] ?? '')) === '') {
+                $problems[] = Lang::t('Category {n} has no name.', ['n' => $index + 1]);
+            }
+            if (!in_array($category['id'], array_column($questions, 'categoryId'), true)) {
+                $problems[] = Lang::t('Category "{name}" has no questions.', ['name' => $category['name'] ?? '']);
+            }
+        }
         foreach ($questions as $index => $question) {
-            $problems = array_merge($problems, Questions::problems($question, Lang::t('Question {n}', ['n' => $index + 1])));
+            $label = Lang::t('Question {n}', ['n' => $index + 1]);
+            $problems = array_merge($problems, Questions::problems($question, $label));
+            if ($categoryIds !== [] && !in_array($question['categoryId'] ?? '', $categoryIds, true)) {
+                $problems[] = Lang::t('{label} has no category.', ['label' => $label]);
+            }
         }
         return $problems;
     }
@@ -80,13 +98,16 @@ final class QuizType extends LearningType
         $earned = 0.0;
         $total = 0.0;
         $review = [];
+        $perCategory = [];
         foreach ($content['questions'] ?? [] as $question) {
             $points = max(0.0, (float) ($question['points'] ?? 1));
             $answer = $answers[$question['id']] ?? null;
+            $correct = Questions::isCorrect($question, $answer);
             $total += $points;
-            if (Questions::isCorrect($question, $answer)) {
-                $earned += $points;
-            }
+            $earned += $correct ? $points : 0;
+            $category = (string) ($question['categoryId'] ?? '');
+            $perCategory[$category]['total'] = ($perCategory[$category]['total'] ?? 0) + $points;
+            $perCategory[$category]['earned'] = ($perCategory[$category]['earned'] ?? 0) + ($correct ? $points : 0);
             $review[] = Questions::review($question, $answer);
         }
         $score = $total > 0 ? $earned / $total : 0.0;
@@ -99,8 +120,27 @@ final class QuizType extends LearningType
                 'percentage' => $percentage,
                 'earned' => $earned,
                 'total' => $total,
+                'categories' => $this->rollUp($content, $perCategory),
                 'review' => $showAnswers ? $review : null,
             ],
         ];
+    }
+
+    private function rollUp(array $content, array $perCategory): array
+    {
+        $rows = [];
+        foreach ($content['categories'] ?? [] as $category) {
+            $totals = $perCategory[(string) $category['id']] ?? null;
+            if ($totals !== null && $totals['total'] > 0) {
+                $rows[] = [
+                    'id' => (string) $category['id'],
+                    'name' => (string) ($category['name'] ?? ''),
+                    'earned' => $totals['earned'],
+                    'total' => $totals['total'],
+                    'percentage' => round($totals['earned'] / $totals['total'] * 100, 1),
+                ];
+            }
+        }
+        return $rows;
     }
 }

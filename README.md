@@ -5,8 +5,9 @@ Create learning objects and serve them to any LMS over LTI 1.1 and 1.3.
 | Kind | What it is | Sent to the LMS |
 | --- | --- | --- |
 | **E-learning** | Paged course in Markdown, with images, questions, reveals, callouts and flip cards | Completion, or score from the questions |
-| **Quiz** | Scored questions, pass mark, attempts, shuffle, optional feedback per question | Best score |
-| **Scan** | Self-assessment on a rating scale, with a profile and advice per dimension | Completion |
+| **Quiz** | Scored questions in categories, with a score per category. Pass mark, attempts, shuffle, optional feedback per question | Best score |
+| **Scan** | Statements rated from 1 to 5 in categories. You set percentage ranges per category, and each range has its own feedback | Completion |
+| **Decision tree** | Branching scenario on a visual map. Choices lead to different endings, each with its own score | Completion, or score from the ending reached |
 
 Built with PHP 8 and MySQL/MariaDB, without Composer, so it runs on shared hosting. The frontend is Angular with Tailwind. The interface is available in English and Dutch.
 

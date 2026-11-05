@@ -7,7 +7,7 @@ use App\Core\Lang;
 
 /**
  * The question model shared by quizzes and e-learning.
- * { id, type: single|multiple|truefalse|text, text, points, feedback,
+ * { id, type: single|multiple|truefalse|text, text, points, feedback, categoryId,
  *   options: [{id, text, correct, feedback}], accepted: [string] }
  */
 final class Questions

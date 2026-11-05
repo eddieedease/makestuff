@@ -45,3 +45,11 @@
   .alert-error { @apply rounded-lg bg-danger-soft px-3 py-2 text-sm text-danger; }
   .alert-ok { @apply rounded-lg bg-accent-soft px-3 py-2 text-sm text-accent-dark; }
 }
+
+/* Authors type their own quotes and code marks; the prose defaults would double them. */
+.prose blockquote p::before,
+.prose blockquote p::after,
+.prose code::before,
+.prose code::after {
+  content: none;
+}

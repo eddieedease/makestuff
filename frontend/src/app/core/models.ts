@@ -65,6 +65,7 @@ export interface Question {
   type: 'single' | 'multiple' | 'truefalse' | 'text';
   text: string;
   points?: number;
+  categoryId?: string;
   feedback?: string;
   options: { id: string; text: string; correct?: boolean; feedback?: string }[];
   accepted?: string[];

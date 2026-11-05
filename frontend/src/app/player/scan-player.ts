@@ -1,11 +1,12 @@
 import { Component, computed, effect, inject, signal, untracked } from '@angular/core';
 import { errorMessage } from '../core/auth';
+import { CategoryScores } from '../shared/category-scores';
 import { PlayStore } from './play-store';
 import { ResultFooter } from './result-footer';
 import { NumPipe, TPipe } from '../i18n/i18n';
 
 @Component({
-  imports: [ResultFooter, TPipe, NumPipe],
+  imports: [CategoryScores, ResultFooter, TPipe, NumPipe],
   template: `
     @if (result(); as r) {
       <section class="card p-6">
@@ -18,22 +19,7 @@ import { NumPipe, TPipe } from '../i18n/i18n';
       </section>
 
       <h2 class="mt-6 text-xl font-semibold">{{ 'Your profile' | t }}</h2>
-      <div class="mt-3 space-y-3">
-        @for (d of r.dimensions; track d.id) {
-          <section class="card p-4">
-            <div class="flex items-baseline justify-between gap-3">
-              <h3 class="font-sans text-sm font-semibold">{{ d.name }}</h3>
-              <span class="text-sm tabular-nums text-muted">{{ d.percentage | num }}%</span>
-            </div>
-            <div class="mt-2 h-2 overflow-hidden rounded-full bg-line" role="img" [attr.aria-label]="d.name + ': ' + d.percentage + '%'">
-              <div class="h-full rounded-full bg-accent" [style.width.%]="d.percentage"></div>
-            </div>
-            @if (d.band; as b) {
-              <p class="mt-2 text-sm"><span class="font-semibold">{{ b.title }}.</span> {{ b.advice }}</p>
-            }
-          </section>
-        }
-      </div>
+      <div class="mt-3"><app-category-scores [categories]="r.categories" /></div>
       <app-result-footer />
     } @else {
       @if (content().intro) { <p class="text-sm text-muted">{{ content().intro }}</p> }

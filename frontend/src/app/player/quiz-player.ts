@@ -2,6 +2,7 @@ import { Component, computed, effect, inject, signal, untracked } from '@angular
 import { errorMessage } from '../core/auth';
 import { NumPipe, TPipe, t } from '../i18n/i18n';
 import { Question, QuestionReview } from '../core/models';
+import { CategoryScores } from '../shared/category-scores';
 import { QuestionCard } from '../shared/question-card';
 import { PlayStore } from './play-store';
 import { ResultFooter } from './result-footer';
@@ -16,7 +17,7 @@ function shuffled<T>(items: T[]): T[] {
 }
 
 @Component({
-  imports: [QuestionCard, ResultFooter, TPipe, NumPipe],
+  imports: [CategoryScores, QuestionCard, ResultFooter, TPipe, NumPipe],
   template: `
     @if (result(); as r) {
       <section class="card p-6">
@@ -25,6 +26,10 @@ function shuffled<T>(items: T[]): T[] {
         <p class="text-sm text-muted">{{ 'The pass mark is {percent}%.' | t: { percent: settings().passPercentage } }}</p>
         <app-result-footer />
       </section>
+      @if (r.detail.categories?.length) {
+        <h2 class="mt-8 text-xl font-semibold">{{ 'Score per category' | t }}</h2>
+        <div class="mt-3"><app-category-scores [categories]="r.detail.categories" /></div>
+      }
       @if (r.detail.review) {
         <h2 class="mt-8 text-xl font-semibold">{{ 'Your answers' | t }}</h2>
         <div class="mt-3 space-y-3">

@@ -1,4 +1,4 @@
-import { Component, input } from '@angular/core';
+import { Component, input, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Question } from '../core/models';
 import { TPipe, t } from '../i18n/i18n';
@@ -20,6 +20,14 @@ const uid = (prefix: string) => prefix + crypto.randomUUID().slice(0, 8);
                 <option value="truefalse">{{ 'True or false' | t }}</option>
                 <option value="text">{{ 'Typed answer' | t }}</option>
               </select>
+              @if (content().categories.length) {
+                <select class="input !w-auto !py-1" [attr.aria-label]="'Category' | t" [(ngModel)]="q.categoryId" (ngModelChange)="changed()()">
+                  <option value="">{{ 'Choose category' | t }}</option>
+                  @for (c of content().categories; track c.id) {
+                    <option [value]="c.id">{{ c.name || ('Unnamed' | t) }}</option>
+                  }
+                </select>
+              }
               <label class="ml-auto flex items-center gap-1 text-xs text-muted">{{ 'Points' | t }}
                 <input class="input !w-16 !py-1" type="number" min="0" [(ngModel)]="q.points" (ngModelChange)="changed()()" />
               </label>
@@ -71,6 +79,15 @@ const uid = (prefix: string) => prefix + crypto.randomUUID().slice(0, 8);
       </div>
 
       <aside class="space-y-3 lg:order-2">
+        <h2 class="text-xs font-semibold uppercase tracking-wide text-muted">{{ 'Categories' | t }}</h2>
+        <p class="hint">{{ 'Learners get a score per category. Leave empty for one total score.' | t }}</p>
+        @for (c of content().categories; track c.id; let i = $index) {
+          <div class="flex gap-1">
+            <input class="input" [attr.aria-label]="'Category {n}' | t: { n: i + 1 }" [placeholder]="'For example: Safety' | t" [(ngModel)]="c.name" (ngModelChange)="changed()()" />
+            <button type="button" class="btn-quiet !px-2" [attr.aria-label]="'Delete category {n}' | t: { n: i + 1 }" (click)="removeCategory(i)">✕</button>
+          </div>
+        }
+        <button type="button" class="btn-ghost w-full" (click)="addCategory()">{{ 'Add category' | t }}</button>
         <h2 class="text-xs font-semibold uppercase tracking-wide text-muted">{{ 'Settings' | t }}</h2>
         <label class="label">{{ 'Pass mark (%)' | t }}
           <input class="input" type="number" min="0" max="100" [(ngModel)]="content().settings.passPercentage" (ngModelChange)="changed()()" />
@@ -89,7 +106,7 @@ const uid = (prefix: string) => prefix + crypto.randomUUID().slice(0, 8);
     </div>
   `,
 })
-export class QuizEditor {
+export class QuizEditor implements OnInit {
   content = input.required<any>();
   changed = input.required<() => void>();
   toggles = [
@@ -97,6 +114,24 @@ export class QuizEditor {
     { key: 'immediateFeedback', label: 'Feedback per question', hint: 'Learners see if they are right as they go.' },
     { key: 'showAnswers', label: 'Show answers afterwards', hint: 'Turn off if learners may retake it.' },
   ];
+
+  ngOnInit(): void {
+    // Quizzes made before categories existed.
+    this.content().categories ??= [];
+  }
+
+  addCategory(): void {
+    this.content().categories.push({ id: uid('c'), name: '' });
+    this.changed()();
+  }
+
+  removeCategory(index: number): void {
+    const [category] = this.content().categories.splice(index, 1);
+    for (const question of this.content().questions) {
+      if (question.categoryId === category.id) question.categoryId = '';
+    }
+    this.changed()();
+  }
 
   private blankOptions(): Question['options'] {
     return [
@@ -106,7 +141,7 @@ export class QuizEditor {
   }
 
   add(): void {
-    this.content().questions.push({ id: uid('q'), type: 'single', text: '', points: 1, feedback: '', options: this.blankOptions(), accepted: [] });
+    this.content().questions.push({ id: uid('q'), categoryId: this.content().categories.at(-1)?.id ?? '', type: 'single', text: '', points: 1, feedback: '', options: this.blankOptions(), accepted: [] });
     this.changed()();
   }
 

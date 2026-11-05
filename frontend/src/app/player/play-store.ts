@@ -25,8 +25,8 @@ export class PlayStore {
     this.session.set(await firstValueFrom(this.http.get<PlaySession>('api/play/session', { headers: this.headers() })));
   }
 
-  check(id: string, answer: unknown): Promise<QuestionReview> {
-    return firstValueFrom(this.http.post<QuestionReview>('api/play/check', { id, answer }, { headers: this.headers() }));
+  check<T = QuestionReview>(id: string, answer: unknown): Promise<T> {
+    return firstValueFrom(this.http.post<T>('api/play/check', { id, answer }, { headers: this.headers() }));
   }
 
   /** Debounced: players call this on every change so a closed tab loses little. */
