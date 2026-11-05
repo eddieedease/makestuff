@@ -11,7 +11,7 @@ final class Registry
     /** @return LearningType[] */
     public static function all(): array
     {
-        return [new ElearningType(), new QuizType(), new ScanType(), new DecisionTreeType()];
+        return [new ElearningType(), new QuizType(), new ScanType(), new DecisionTreeType(), new ConceptMapType()];
     }
 
     public static function get(string $key): LearningType

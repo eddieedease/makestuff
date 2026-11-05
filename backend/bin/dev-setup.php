@@ -45,12 +45,16 @@ if (Db::value("SELECT id FROM lti_connections WHERE name LIKE 'Mock LMS%' LIMIT 
     );
 }
 
-if (Db::value('SELECT id FROM learning_objects LIMIT 1') === null) {
+// Per item, so a new sample also reaches a database that already has content.
+{
     $userId = (int) Db::value("SELECT id FROM users WHERE username = 'user'");
     $adminId = (int) Db::value("SELECT id FROM users WHERE username = 'admin'");
 
     $seed = require __DIR__ . '/dev-content.php';
     foreach ($seed as $item) {
+        if (Db::value('SELECT id FROM learning_objects WHERE public_id = ?', [$item['public_id']]) !== null) {
+            continue;
+        }
         $problems = Registry::get($item['type'])->validate($item['content']);
         if ($problems !== []) {
             fwrite(STDERR, "Invalid sample '{$item['title']}': " . implode(' ', $problems) . "\n");

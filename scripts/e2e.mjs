@@ -117,14 +117,14 @@ ok('half right scores 50%', done.json.attempt.result.detail.percentage === 50 &&
 const g13 = await logEntry('grade LTI 1.3', s13);
 ok('AGS score arrived', g13?.score === '50/100', JSON.stringify(g13));
 
-const c = await launch13(`object=demo-scan&role=Instructor&user=teach`);
+const c = await launch13(`object=demo-scan&role=Instructor&user=teach${Date.now()}`);
 const rc = await post(c.url, c.data);
 const pc = tokenFrom(rc.headers.get('location'));
 const sc = await api('POST', '/api/play/submit', { launch: pc, body: { answers: { s1: 5, s2: 1, s3: 5, s4: 5, s5: 5, s6: 5 } } });
 ok('reversed scan scoring', sc.json.attempt.result.detail.overall === 100 && sc.json.attempt.result.detail.overallBand.title === 'Digitally confident', sc.text);
 ok('scan scores every category', sc.json.attempt.result.detail.categories.length === 3 && sc.json.attempt.result.detail.categories.every((x) => x.percentage === 100), sc.text);
 ok('category range gives its feedback', sc.json.attempt.result.detail.categories.find((x) => x.id === 'safety').band.title === 'Well protected', sc.text);
-const low = await launch13('object=demo-scan&role=Instructor&user=teach2');
+const low = await launch13(`object=demo-scan&role=Instructor&user=teach2${Date.now()}`);
 const lowToken = tokenFrom((await post(low.url, low.data)).headers.get('location'));
 const lowScore = await api('POST', '/api/play/submit', { launch: lowToken, body: { answers: { s1: 3, s2: 3, s3: 2, s4: 3, s5: 3, s6: 3 } } });
 const safety = lowScore.json.attempt.result.detail.categories.find((x) => x.id === 'safety');
@@ -208,6 +208,30 @@ ok('choice into nothing is caught', treeProblems.some((p) => p.includes('leads n
 ok('unreachable step is caught', treeProblems.some((p) => p.startsWith('"Orphan" cannot be reached')), JSON.stringify(treeProblems));
 ok('dead-end loop is caught', treeProblems.some((p) => p.startsWith('"Trap" never leads')), JSON.stringify(treeProblems));
 await api('DELETE', `/api/objects/${treeDraft.id}`, { token: user });
+
+console.log('Concept map');
+const student4 = `m${Date.now()}`;
+const ml = await launch11('demo-map', student4);
+const mapPlay = tokenFrom((await post(ml.url, ml.data)).headers.get('location'));
+const map = await api('GET', '/api/play/session', { launch: mapPlay });
+ok('map reaches the player', map.json.object.content.nodes.length === 6 && map.json.object.content.settings.reveal === 'progressive', map.text);
+const allIds = map.json.object.content.nodes.map((n) => n.id);
+ok('cannot finish with ideas unopened', (await api('POST', '/api/play/submit', { launch: mapPlay, body: { answers: { visited: allIds.slice(0, 3) } } })).status === 422);
+ok('made-up ideas do not count', (await api('POST', '/api/play/submit', { launch: mapPlay, body: { answers: { visited: ['a', 'b', 'c', 'd', 'e', 'f'] } } })).status === 422);
+const mapDone = await api('POST', '/api/play/submit', { launch: mapPlay, body: { answers: { visited: allIds } } });
+ok('finishing the map scores 100%', mapDone.json.attempt?.result?.score === 1 && mapDone.json.attempt.result.detail.visited === 6, mapDone.text);
+ok('map completion reaches the LMS', (await logEntry('grade LTI 1.1', student4))?.score === '1.0000');
+const mapDraft = (await api('POST', '/api/objects', { token: user, body: { type: 'concept_map', title: 'M' } })).json.object;
+ok('new map publishes as created', (await api('POST', `/api/objects/${mapDraft.id}/publish`, { token: user })).status === 200);
+const lonely = structuredClone(mapDraft.content);
+lonely.settings.reveal = 'progressive';
+lonely.nodes.push({ id: 'lone', title: 'Lone', text: 'x', categoryId: '', x: 0, y: 0 });
+lonely.edges.push({ id: 'bad', from: 'lone', to: 'gone', label: '' });
+await api('PUT', `/api/objects/${mapDraft.id}`, { token: user, body: { title: 'M', description: '', content: lonely } });
+const mapProblems = (await api('POST', `/api/objects/${mapDraft.id}/publish`, { token: user })).json.details?.problems ?? [];
+ok('unconnected idea is caught', mapProblems.some((p) => p.startsWith('"Lone" is not connected')), JSON.stringify(mapProblems));
+ok('broken connection is caught', mapProblems.includes('A connection does not join two ideas.'), JSON.stringify(mapProblems));
+await api('DELETE', `/api/objects/${mapDraft.id}`, { token: user });
 
 console.log('Languages');
 const nlHeaders = { 'Content-Type': 'application/json', 'Accept-Language': 'nl' };

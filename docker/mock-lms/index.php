@@ -219,7 +219,7 @@ if ($path === '/log.json') {
 
 // The course page.
 $options = '';
-foreach (['demo-elearning' => 'E-learning: Giving feedback that lands', 'demo-quiz' => 'Quiz: Web safety basics', 'demo-scan' => 'Scan: Digital skills', 'demo-tree' => 'Decision tree: The unhappy customer'] as $id => $label) {
+foreach (['demo-elearning' => 'E-learning: Giving feedback that lands', 'demo-quiz' => 'Quiz: Web safety basics', 'demo-scan' => 'Scan: Digital skills', 'demo-tree' => 'Decision tree: The unhappy customer', 'demo-map' => 'Concept map: The water cycle'] as $id => $label) {
     $options .= "<option value=\"$id\">$label</option>";
 }
 ?><!doctype html><meta charset="utf-8"><title>Mock LMS</title>

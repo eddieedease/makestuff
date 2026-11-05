@@ -8,6 +8,7 @@ Create learning objects and serve them to any LMS over LTI 1.1 and 1.3.
 | **Quiz** | Scored questions in categories, with a score per category. Pass mark, attempts, shuffle, optional feedback per question | Best score |
 | **Scan** | Statements rated from 1 to 5 in categories. You set percentage ranges per category, and each range has its own feedback | Completion |
 | **Decision tree** | Branching scenario on a visual map. Choices lead to different endings, each with its own score | Completion, or score from the ending reached |
+| **Concept map** | Graph of ideas joined by labelled connections. Learners explore by opening ideas, optionally revealing the map step by step | Completion |
 
 Built with PHP 8 and MySQL/MariaDB, without Composer, so it runs on shared hosting. The frontend is Angular with Tailwind. The interface is available in English and Dutch.
 
@@ -51,7 +52,7 @@ node scripts/e2e.mjs
 node scripts/lang-check.mjs
 ```
 
-`e2e.mjs` runs permissions, LTI launches, forged and replayed launches, grade passback and deep linking against the mock LMS. Run it on a fresh database (`docker compose down -v`), because it expects the seeded data. `lang-check.mjs` fails when a visible text has no Dutch translation.
+`e2e.mjs` runs permissions, LTI launches, forged and replayed launches, grade passback and deep linking against the mock LMS. It expects the seeded demo items, and it can run repeatedly. `lang-check.mjs` fails when a visible text has no Dutch translation.
 
 To try the installer on an empty install, start `docker compose --profile installer up -d web-install` and open http://localhost:8092.
 

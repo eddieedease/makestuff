@@ -51,6 +51,14 @@ export const LEARNING_TYPES: LearningTypeUi[] = [
     editor: () => import('../editors/decision-tree-editor').then((m) => m.DecisionTreeEditor),
     player: () => import('../player/decision-tree-player').then((m) => m.DecisionTreePlayer),
   },
+  {
+    key: 'concept_map',
+    label: 'Concept map',
+    blurb: 'A graph of connected ideas that learners explore.',
+    tag: 'bg-line text-ink',
+    editor: () => import('../editors/concept-map-editor').then((m) => m.ConceptMapEditor),
+    player: () => import('../player/concept-map-player').then((m) => m.ConceptMapPlayer),
+  },
 ];
 
 export function learningType(key: string): LearningTypeUi | undefined {

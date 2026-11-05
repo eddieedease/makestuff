@@ -20,7 +20,7 @@ import { LocalDatePipe, TPipe, t } from '../i18n/i18n';
       </div>
 
       @if (creating()) {
-        <section class="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4" [attr.aria-label]="'Choose what to make' | t">
+        <section class="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-3" [attr.aria-label]="'Choose what to make' | t">
           @for (type of types; track type.key) {
             <button type="button" class="card p-4 text-left transition-colors hover:border-accent" (click)="create(type)">
               <span class="pill" [class]="type.tag">{{ type.label | t }}</span>
